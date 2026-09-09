@@ -7,7 +7,7 @@ High-performance automation and utility hub for **The Veil** (Roblox) built on t
 Run this script directly in your Roblox executor:
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ZeroDepTrai/the-veil-hub/main/main.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ZeroDepTrai/the-veil-hub/main/main.lua?" .. tick()))()
 ```
 
 ## ⚡ Features
