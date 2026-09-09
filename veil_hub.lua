@@ -5,6 +5,16 @@ local DEFAULT_CONFIG = {
     MultiEquip = true,
     HoldToAttack = false,
     SelectedWeapons = {},
+    EnableMobFarm = false,
+    MobFarmKeybind = "H",
+    MobFarmDistance = 7,
+    MobFarmHeight = -6,
+    AutoAttackOnFarm = true,
+    MobFarmCollectDrops = true,
+    MobFarmReturnToStart = true,
+    TargetMobType = "All Mobs (Nearest)",
+    IncludeDummies = false,
+    MobFarmMaxRadius = 0,
     AutoPickup = false,
     PickupDelay = 0.10,
     PickupMaxRadius = 0,
@@ -832,6 +842,12 @@ local MapDropsLabel = nil
 local FilterMatchesLabel = nil
 local SessionPickedLabel = nil
 local CombatStatusLabel = nil
+local MobFarmStatusLabel = nil
+local MobFarmStatsLabel = nil
+
+local InitialMobFarmCFrame = nil
+local MobFarmCurrentTarget = nil
+local MobsKilledCount = 0
 
 local function ScanInventoryWeapons()
     local char = GetCharacter()
@@ -919,6 +935,76 @@ local function GetDropPosition(d)
         return piv.Position
     end
     return nil
+end
+
+local INITIAL_MOB_TYPES = {
+    "All Mobs (Nearest)",
+    "Ancient Bones",
+    "Bloated Hiveling",
+    "Blood Hiveling",
+    "Crowned Goblin",
+    "Explorer",
+    "Goblin",
+    "Goblin Archer",
+    "Goblin Sorcerer",
+    "Goblin Thief",
+    "Goblin Warrior",
+    "Hiveling",
+    "Pillar Mimic",
+    "Runner",
+    "Skeleton",
+    "Training Dummy",
+}
+
+local function ScanMapMobTypes()
+    local monstersFolder = Workspace:FindFirstChild("Monsters")
+    local list = { "All Mobs (Nearest)" }
+    if monstersFolder then
+        for _, m in ipairs(monstersFolder:GetChildren()) do
+            if m:IsA("Model") and not table.find(list, m.Name) then
+                table.insert(list, m.Name)
+            end
+        end
+    end
+    table.sort(list)
+    return list
+end
+
+local function GetNextMobTarget()
+    local monstersFolder = Workspace:FindFirstChild("Monsters")
+    if not monstersFolder then return nil end
+    local hrp = GetRootPart()
+    if not hrp then return nil end
+    local myPos = (InitialMobFarmCFrame and InitialMobFarmCFrame.Position) or hrp.Position
+    local targetType = Options.TargetMobType and Options.TargetMobType.Value or "All Mobs (Nearest)"
+    local includeDummies = Toggles.IncludeDummies and Toggles.IncludeDummies.Value
+    local maxRadius = Options.MobFarmMaxRadius and Options.MobFarmMaxRadius.Value or 0
+
+    local bestMob = nil
+    local bestDist = math.huge
+
+    for _, m in ipairs(monstersFolder:GetChildren()) do
+        if m:IsA("Model") then
+            if includeDummies or m.Name ~= "Training Dummy" then
+                local hum = m:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 then
+                    local matchType = (targetType == "All Mobs (Nearest)") or (m.Name == targetType) or (string.find(m.Name, targetType, 1, true) ~= nil)
+                    if matchType then
+                        local mobPos = m:GetPivot().Position
+                        local d = (myPos - mobPos).Magnitude
+                        if maxRadius == 0 or d <= maxRadius then
+                            if d < bestDist then
+                                bestDist = d
+                                bestMob = m
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return bestMob
 end
 
 local function GetBackpackCount()
@@ -1370,7 +1456,106 @@ CombatRight:AddButton({
     Tooltip = "Unchecks all weapons",
 })
 
+local MobFarmLeft = Tabs.Combat:AddLeftGroupbox("Auto Mob Farm (Underground Back-Attach)")
+
+MobFarmLeft:AddToggle("EnableMobFarm", {
+    Text = "Enable Auto Mob Farm",
+    Default = DEFAULT_CONFIG.EnableMobFarm,
+    Tooltip = "Attaches behind monsters underground with flight & noclip enabled, auto-farming them safely",
+}):AddKeyPicker("MobFarmKeybind", {
+    Default = DEFAULT_CONFIG.MobFarmKeybind,
+    SyncToggleState = true,
+    Mode = "Toggle",
+    Text = "Mob Farm Keybind",
+    NoUI = false,
+})
+
+MobFarmLeft:AddSlider("MobFarmDistance", {
+    Text = "Distance Behind Mob",
+    Default = DEFAULT_CONFIG.MobFarmDistance,
+    Min = 3,
+    Max = 20,
+    Rounding = 0,
+    Suffix = " studs",
+    Tooltip = "Distance behind the monster back to hover",
+})
+
+MobFarmLeft:AddSlider("MobFarmHeight", {
+    Text = "Height Offset (Underground)",
+    Default = DEFAULT_CONFIG.MobFarmHeight,
+    Min = -15,
+    Max = 5,
+    Rounding = 1,
+    Suffix = " studs",
+    Tooltip = "Negative Y positions you underground so other players cannot see your name and mobs cannot hit you",
+})
+
+MobFarmLeft:AddToggle("AutoAttackOnFarm", {
+    Text = "Auto Attack Mob",
+    Default = DEFAULT_CONFIG.AutoAttackOnFarm,
+    Tooltip = "Continuously attacks the target monster using your selected weapons",
+})
+
+MobFarmLeft:AddToggle("MobFarmCollectDrops", {
+    Text = "Collect Drops on Kill",
+    Default = DEFAULT_CONFIG.MobFarmCollectDrops,
+    Tooltip = "Automatically vacuums up monster drops upon kill",
+})
+
+MobFarmLeft:AddToggle("MobFarmReturnToStart", {
+    Text = "Return to Start on Stop",
+    Default = DEFAULT_CONFIG.MobFarmReturnToStart,
+    Tooltip = "Returns character to start coordinate when mob farm stops",
+})
+
+MobFarmStatusLabel = MobFarmLeft:AddLabel("Status: Idle")
+
+local MobFarmRight = Tabs.Combat:AddRightGroupbox("Mob Farm Targets & Range")
+
+MobFarmRight:AddDropdown("TargetMobType", {
+    Values = INITIAL_MOB_TYPES,
+    Default = DEFAULT_CONFIG.TargetMobType,
+    Multi = false,
+    Searchable = true,
+    Text = "Target Monster Type",
+    Tooltip = "Choose which monster to farm, or select All Mobs to target anything nearest",
+})
+
+MobFarmRight:AddButton({
+    Text = "Refresh Mob List from Map",
+    Func = function()
+        local updated = ScanMapMobTypes()
+        if #updated > 0 then
+            Options.TargetMobType:SetValues(updated)
+            Library:Notify(string.format("Found %d monster types on map!", #updated), 3)
+        else
+            Library:Notify("No monsters found on map.", 2)
+        end
+    end,
+    DoubleClick = false,
+    Tooltip = "Scans Workspace.Monsters for all active monster species",
+})
+
+MobFarmRight:AddToggle("IncludeDummies", {
+    Text = "Include Training Dummies",
+    Default = DEFAULT_CONFIG.IncludeDummies,
+    Tooltip = "Target Training Dummies in town (safezone may block damage)",
+})
+
+MobFarmRight:AddSlider("MobFarmMaxRadius", {
+    Text = "Max Farm Radius",
+    Default = DEFAULT_CONFIG.MobFarmMaxRadius,
+    Min = 0,
+    Max = 5000,
+    Rounding = 0,
+    Suffix = " studs",
+    Tooltip = "0 = Full map unlimited range",
+})
+
+MobFarmStatsLabel = MobFarmRight:AddLabel("Mobs Killed: 0")
+
 local FarmLeft = Tabs.Farm:AddLeftGroupbox("Trinket Farm")
+
 
 FarmLeft:AddToggle("AutoPickup", {
     Text = "Enable Auto Pickup",
@@ -1750,7 +1935,7 @@ ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
 
 SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ "MenuKeybind", "FastAttackKeybind", "WalkSpeedKeybind", "FlyKeybind", "NoclipKeybind" })
+SaveManager:SetIgnoreIndexes({ "MenuKeybind", "FastAttackKeybind", "MobFarmKeybind", "WalkSpeedKeybind", "FlyKeybind", "NoclipKeybind" })
 
 ThemeManager:SetFolder("TheVeilHub")
 SaveManager:SetFolder("TheVeilHub/game")
@@ -1770,7 +1955,10 @@ _G.VeilHub = {
     StartFlying = StartFlying,
     StopFlying = StopFlying,
     AttackWithWeapon = AttackWithWeapon,
+    GetNextMobTarget = GetNextMobTarget,
+    ScanMapMobTypes = ScanMapMobTypes,
 }
+
 
 Toggles.EnableFastAttack:OnChanged(function()
     if Toggles.EnableFastAttack.Value then
@@ -1782,6 +1970,43 @@ Toggles.EnableFastAttack:OnChanged(function()
         local char = GetCharacter()
         local bp = LocalPlayer:FindFirstChild("Backpack")
         if char and bp then
+            local count = 0
+            for _, c in ipairs(char:GetChildren()) do
+                if c:IsA("Tool") and c.Name ~= "Bag" then
+                    count = count + 1
+                    if count > 1 then
+                        c.Parent = bp
+                    end
+                end
+            end
+        end
+    end
+end)
+
+Toggles.EnableMobFarm:OnChanged(function()
+    if Toggles.EnableMobFarm.Value then
+        local hrp = GetRootPart()
+        InitialMobFarmCFrame = hrp and hrp.CFrame
+        StartFlying()
+        if MobFarmStatusLabel then MobFarmStatusLabel:SetText("Status: Searching for mobs...") end
+        Library:Notify("Auto Mob Farm Enabled (Flight & Noclip Active)", 3)
+    else
+        MobFarmCurrentTarget = nil
+        if MobFarmStatusLabel then MobFarmStatusLabel:SetText("Status: Idle") end
+        Library:Notify("Auto Mob Farm Disabled", 2)
+        if not (Toggles.Fly and Toggles.Fly.Value) then
+            StopFlying()
+        end
+        if Toggles.MobFarmReturnToStart and Toggles.MobFarmReturnToStart.Value and InitialMobFarmCFrame then
+            local hrp = GetRootPart()
+            if hrp then
+                SafeTeleport(InitialMobFarmCFrame.Position)
+                hrp.CFrame = InitialMobFarmCFrame
+            end
+        end
+        local char = GetCharacter()
+        local bp = LocalPlayer:FindFirstChild("Backpack")
+        if char and bp and not (Toggles.EnableFastAttack and Toggles.EnableFastAttack.Value) then
             local count = 0
             for _, c in ipairs(char:GetChildren()) do
                 if c:IsA("Tool") and c.Name ~= "Bag" then
@@ -1840,7 +2065,12 @@ end)
 
 RunService.RenderStepped:Connect(function()
     if not _G.__VeilHubRunning then return end
-    if Toggles.Fly and Toggles.Fly.Value then
+    if Toggles.EnableMobFarm and Toggles.EnableMobFarm.Value then
+        local hrp = GetRootPart()
+        if hrp and FlyBodyVelocity and FlyBodyVelocity.Parent == hrp then
+            FlyBodyVelocity.Velocity = Vector3.zero
+        end
+    elseif Toggles.Fly and Toggles.Fly.Value then
         local hrp = GetRootPart()
         local cam = Workspace.CurrentCamera
         if hrp and cam and FlyBodyVelocity and FlyBodyVelocity.Parent == hrp then
@@ -1884,7 +2114,7 @@ end)
 
 RunService.Stepped:Connect(function()
     if not _G.__VeilHubRunning then return end
-    if Toggles.Noclip and Toggles.Noclip.Value then
+    if (Toggles.Noclip and Toggles.Noclip.Value) or (Toggles.EnableMobFarm and Toggles.EnableMobFarm.Value) then
         local char = GetCharacter()
         if char then
             for _, p in ipairs(char:GetDescendants()) do
@@ -1895,6 +2125,7 @@ RunService.Stepped:Connect(function()
         end
     end
 end)
+
 
 RunService.Heartbeat:Connect(function()
     if not _G.__VeilHubRunning then return end
@@ -1966,6 +2197,151 @@ task.spawn(function()
 end)
 
 task.spawn(function()
+    while _G.__VeilHubRunning do
+        if Toggles.EnableMobFarm and Toggles.EnableMobFarm.Value then
+            local char = GetCharacter()
+            local hrp = GetRootPart()
+            local hum = GetHumanoid()
+
+            if char and hrp and hum and hum.Health > 0 then
+                local curSanity = GetSanity()
+                if curSanity < 20 then
+                    if MobFarmStatusLabel then MobFarmStatusLabel:SetText("Status: Critical Sanity (" .. curSanity .. "/100)! Recovering...") end
+                    Library:Notify("Sanity critical (" .. curSanity .. "/100)! Retreating to recover...", 4)
+                    local safePos = (InitialMobFarmCFrame and InitialMobFarmCFrame.Position) or Vector3.new(238, 186, 0)
+                    SafeTeleport(safePos)
+                    local waitCount = 0
+                    while _G.__VeilHubRunning and Toggles.EnableMobFarm.Value do
+                        task.wait(1)
+                        waitCount = waitCount + 1
+                        local s = GetSanity()
+                        if s >= 90 then
+                            Library:Notify("Sanity recovered (" .. s .. "/100)! Resuming mob farm.", 3)
+                            if MobFarmStatusLabel then MobFarmStatusLabel:SetText("Status: Searching for mobs...") end
+                            break
+                        else
+                            if waitCount >= 6 and s <= 22 then
+                                SafeTeleport(Vector3.new(238, 186, 0))
+                            end
+                            if MobFarmStatusLabel then MobFarmStatusLabel:SetText("Status: Recovering Sanity (" .. s .. "/100)...") end
+                        end
+                    end
+                end
+
+                if not FlyBodyVelocity or not FlyBodyVelocity.Parent then
+                    StartFlying()
+                end
+
+                local target = MobFarmCurrentTarget
+                local targetHum = target and target.Parent and target:FindFirstChildOfClass("Humanoid")
+
+                if not target or not target.Parent or not targetHum or targetHum.Health <= 0 then
+                    if target and targetHum and targetHum.Health <= 0 then
+                        MobsKilledCount = MobsKilledCount + 1
+                        if MobFarmStatsLabel then MobFarmStatsLabel:SetText("Mobs Killed: " .. MobsKilledCount) end
+                        if Toggles.MobFarmCollectDrops and Toggles.MobFarmCollectDrops.Value then
+                            local killPos = target:GetPivot().Position
+                            local dropsFolder = Workspace:FindFirstChild("Drops")
+                            if dropsFolder then
+                                for _, d in ipairs(dropsFolder:GetChildren()) do
+                                    local dp = GetDropPosition(d)
+                                    if dp and (dp - killPos).Magnitude <= 20 then
+                                        CollectSingleDrop(d)
+                                    end
+                                end
+                            end
+                        end
+                    end
+
+                    MobFarmCurrentTarget = GetNextMobTarget()
+                    target = MobFarmCurrentTarget
+                    targetHum = target and target.Parent and target:FindFirstChildOfClass("Humanoid")
+
+                    if not target then
+                        if MobFarmStatusLabel then MobFarmStatusLabel:SetText("Status: Searching for mobs...") end
+                        task.wait(0.5)
+                    end
+                end
+
+                if target and target.Parent and targetHum and targetHum.Health > 0 then
+                    local piv = target:GetPivot()
+                    local targetPos = piv.Position
+                    local targetLook = piv.LookVector
+
+                    local dist = (Options.MobFarmDistance and Options.MobFarmDistance.Value) or 7
+                    local height = (Options.MobFarmHeight and Options.MobFarmHeight.Value) or -6
+
+                    local desiredPos = targetPos - (targetLook * dist) + Vector3.new(0, height, 0)
+                    local desiredCF = CFrame.lookAt(desiredPos, targetPos)
+
+                    hrp.CFrame = desiredCF
+                    hrp.AssemblyLinearVelocity = Vector3.zero
+                    hrp.AssemblyAngularVelocity = Vector3.zero
+
+                    if FlyBodyGyro and FlyBodyGyro.Parent == hrp then
+                        FlyBodyGyro.CFrame = desiredCF
+                    end
+                    if FlyBodyVelocity and FlyBodyVelocity.Parent == hrp then
+                        FlyBodyVelocity.Velocity = Vector3.zero
+                    end
+
+                    if MobFarmStatusLabel then
+                        MobFarmStatusLabel:SetText(string.format("Farming: %s (HP: %.0f/%.0f)", target.Name, targetHum.Health, targetHum.MaxHealth))
+                    end
+
+                    if Toggles.AutoAttackOnFarm and Toggles.AutoAttackOnFarm.Value then
+                        local weapons = GetSelectedWeapons()
+                        if #weapons > 0 then
+                            local isMulti = Toggles.MultiEquip and Toggles.MultiEquip.Value
+                            if isMulti then
+                                for _, w in ipairs(weapons) do
+                                    if w.Parent ~= char then
+                                        w.Parent = char
+                                    end
+                                end
+                            end
+
+                            for _, weapon in ipairs(weapons) do
+                                if not _G.__VeilHubRunning or not Toggles.EnableMobFarm.Value then break end
+                                if not isMulti and weapon.Parent ~= char then
+                                    hum:EquipTool(weapon)
+                                end
+
+                                local remoteName = weapon:GetAttribute("ConsumableRemote")
+                                if remoteName then
+                                    local remote = Remotes:FindFirstChild(remoteName)
+                                    if remote and remote:IsA("RemoteEvent") then
+                                        remote:FireServer(weapon.Name, CFrame.lookAt(hrp.Position, targetPos))
+                                    end
+                                end
+
+                                pcall(function()
+                                    weapon:Activate()
+                                end)
+
+                                local delayVal = tonumber(Options.FastAttackDelay and Options.FastAttackDelay.Value) or 0.10
+                                if delayVal > 0 then
+                                    task.wait(delayVal)
+                                end
+                            end
+                        else
+                            task.wait(0.1)
+                        end
+                    else
+                        task.wait(0.05)
+                    end
+                end
+            else
+                task.wait(0.5)
+            end
+        else
+            task.wait(0.2)
+        end
+    end
+end)
+
+task.spawn(function()
+
     local lastStatUpdate = 0
     local lastMapStream = 0
     while _G.__VeilHubRunning do
