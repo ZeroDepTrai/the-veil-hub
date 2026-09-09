@@ -942,33 +942,63 @@ end
 
 local INITIAL_MOB_TYPES = {
     "All Mobs (Nearest)",
+    "Alien",
+    "Alien Engineer",
+    "Alien Gunner",
     "Ancient Bones",
+    "Angry Nimbus",
     "Armored Skeleton",
     "Bloated Hiveling",
     "Blood Hiveling",
+    "Cambion",
+    "Clown",
     "Crowned Goblin",
+    "Cursed Hammer",
+    "Dissonant",
+    "Dissonant Brute",
+    "Enchanted Sword",
+    "Explorer",
+    "Gigazapper",
     "Goblin",
     "Goblin Archer",
     "Goblin Sorcerer",
     "Goblin Thief",
+    "Goblin Tinkerer",
     "Goblin Warlock",
     "Goblin Warrior",
     "Hiveling",
     "Hiveling Brute",
     "Hiveling Titan",
     "Hivelingstein",
+    "Hungry",
+    "Imp",
+    "Martian Saucer",
+    "Minotaur",
     "Necromancer",
     "Pillar Mimic",
     "Probe",
     "Runner",
+    "Shrouded",
     "Skeleton",
+    "Smelter Demon",
+    "Starving Warrior",
+    "Stone Husk",
+    "The Angry Mask",
+    "The Beholder",
     "The Cell Of Life",
+    "The Crowned Nothing",
     "The Festering Wound",
+    "The Headless Behemoth",
+    "The Laughing Mask",
     "The Masquerade",
     "The Puppeteer",
+    "The Sleeping Mask",
     "The Stormcaller",
+    "The Unfinished",
+    "The Weeping Mask",
     "Training Dummy",
     "Turret Golem",
+    "Twisted Fool",
     "Wraith",
 }
 
@@ -979,6 +1009,7 @@ local MOB_ZONE_MAPPING = {
     ["Hiveling Brute"] = "ThePitSpawnZone",
     ["Hiveling Titan"] = "ThePitSpawnZone",
     ["Hivelingstein"] = "ThePitSpawnZone",
+    ["Hungry"] = "ThePitSpawnZone",
     ["The Festering Wound"] = "TheFesteringWoundArena",
     ["Probe"] = "MurmurSpawnZone",
     ["Goblin"] = "RegularSpawnZone",
@@ -987,6 +1018,7 @@ local MOB_ZONE_MAPPING = {
     ["Goblin Warrior"] = "RegularSpawnZone",
     ["Goblin Sorcerer"] = "RegularSpawnZone",
     ["Goblin Warlock"] = "RegularSpawnZone",
+    ["Goblin Tinkerer"] = "RegularSpawnZone",
     ["Crowned Goblin"] = "RegularSpawnZone",
     ["Skeleton"] = "RegularSpawnZone",
     ["Armored Skeleton"] = "RegularSpawnZone",
@@ -995,12 +1027,40 @@ local MOB_ZONE_MAPPING = {
     ["Wraith"] = "RegularSpawnZone",
     ["Pillar Mimic"] = "RegularSpawnZone",
     ["Turret Golem"] = "RegularSpawnZone",
+    ["The Masquerade"] = "RegularSpawnZone",
+    ["The Angry Mask"] = "RegularSpawnZone",
+    ["The Laughing Mask"] = "RegularSpawnZone",
+    ["The Sleeping Mask"] = "RegularSpawnZone",
+    ["The Weeping Mask"] = "RegularSpawnZone",
+    ["Imp"] = "ScorchBasinSpawn",
+    ["Cambion"] = "ScorchBasinSpawn",
+    ["Smelter Demon"] = "ScorchBasinSpawn",
+    ["The Stormcaller"] = "SkyIslandArena",
+    ["Angry Nimbus"] = "SkyIslandArena",
+    ["The Cell Of Life"] = "CellOfLifeArena",
+    ["Alien"] = "PaleSpawn",
+    ["Alien Engineer"] = "PaleSpawn",
+    ["Alien Gunner"] = "PaleSpawn",
+    ["Gigazapper"] = "PaleSpawn",
+    ["Martian Saucer"] = "PaleSpawn",
+    ["Starving Warrior"] = "PaleSpawn",
+    ["Twisted Fool"] = "PaleSpawn",
+    ["The Headless Behemoth"] = "PaleSpawn",
+    ["Minotaur"] = "PaleSpawn",
+    ["The Crowned Nothing"] = "PaleSpawn",
+    ["The Unfinished"] = "PaleSpawn",
+    ["Dissonant"] = "PaleSpawn",
+    ["Dissonant Brute"] = "PaleSpawn",
+    ["The Beholder"] = "PaleSpawn",
+    ["Stone Husk"] = "ManorSpawn",
+    ["Cursed Hammer"] = "ManorSpawn",
+    ["Enchanted Sword"] = "ManorSpawn",
+    ["Shrouded"] = "ShroudedSpawn",
+    ["The Puppeteer"] = "PuppeteerArena",
+    ["Clown"] = "PuppeteerArena",
     ["Training Dummy"] = "TrainingDummySpawn",
     ["Runner"] = "RunnerSpawn",
-    ["The Stormcaller"] = "SkyIslandArena",
-    ["The Cell Of Life"] = "CellOfLifeArena",
-    ["The Masquerade"] = "RegularSpawnZone",
-    ["The Puppeteer"] = "PuppeteerArena",
+    ["Explorer"] = "RunnerSpawn",
 }
 
 local PRESET_SPAWN_COORDS = {
@@ -1048,6 +1108,18 @@ local PRESET_SPAWN_COORDS = {
     ["PuppeteerArena"] = {
         Vector3.new(408.0, 52.5, 261.5),
     },
+    ["ScorchBasinSpawn"] = {
+        Vector3.new(436.0, 16.0, 56.0),
+    },
+    ["PaleSpawn"] = {
+        Vector3.new(1583.0, 73.5, -1656.5),
+    },
+    ["ManorSpawn"] = {
+        Vector3.new(-468.0, 72.0, -1348.0),
+    },
+    ["ShroudedSpawn"] = {
+        Vector3.new(-1201.4, 37.4, -2016.9),
+    },
 }
 
 local LastKnownMobPositions = {}
@@ -1058,24 +1130,19 @@ local function GetMobSpawnLocation()
     local hrp = GetRootPart()
     local myPos = (hrp and hrp.Position) or Vector3.new(242, 186, 0)
 
-    for mobName, isSelected in pairs(selectedMobs) do
-        if isSelected and mobName ~= "All Mobs (Nearest)" and LastKnownMobPositions[mobName] then
-            return LastKnownMobPositions[mobName]
-        end
-    end
-
     local selectedList = {}
     for mobName, isSelected in pairs(selectedMobs) do
-        if isSelected and mobName ~= "All Mobs (Nearest)" and MOB_ZONE_MAPPING[mobName] then
+        if isSelected and mobName ~= "All Mobs (Nearest)" then
             table.insert(selectedList, mobName)
         end
     end
 
     local zoneType = nil
+    local targetMobName = nil
     if #selectedList > 0 then
         MobSpawnCycleIndex = (MobSpawnCycleIndex % #selectedList) + 1
-        local chosenMob = selectedList[MobSpawnCycleIndex]
-        zoneType = MOB_ZONE_MAPPING[chosenMob]
+        targetMobName = selectedList[MobSpawnCycleIndex]
+        zoneType = MOB_ZONE_MAPPING[targetMobName]
     end
     if not zoneType then
         zoneType = "RegularSpawnZone"
@@ -1095,6 +1162,10 @@ local function GetMobSpawnLocation()
         for _, p in ipairs(PRESET_SPAWN_COORDS[zoneType]) do
             table.insert(candidatePositions, p)
         end
+    end
+
+    if targetMobName and LastKnownMobPositions[targetMobName] then
+        table.insert(candidatePositions, 1, LastKnownMobPositions[targetMobName])
     end
 
     if #candidatePositions == 0 then
