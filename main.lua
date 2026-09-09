@@ -24,7 +24,15 @@ local DEFAULT_CONFIG = {
         ["Idol of Hatred"] = true,
         ["Totem of Hatred"] = true,
         ["Stone Accord"] = true,
-    }
+    },
+    EnableWalkSpeed = false,
+    WalkSpeed = 24,
+    WalkSpeedKeybind = "None",
+    Fly = false,
+    FlySpeed = 50,
+    FlyKeybind = "F",
+    Noclip = false,
+    NoclipKeybind = "N",
 }
 
 local VALUABLE_TRELLO_ITEMS = {
@@ -464,6 +472,219 @@ local TRELLO_ITEMS = {
     "Wrath Potion"
 }
 
+local WORLD_NPCS = {
+    ["A Florian"] = Vector3.new(-17.9, 40.9, 68),
+    ["Adam"] = Vector3.new(195.9, 182.5, -3),
+    ["Ambrose"] = Vector3.new(115.5, 169.6, -55.8),
+    ["Atmere"] = Vector3.new(116, 202.8, 21.3),
+    ["Aurora Wisp"] = Vector3.new(249.2, 1442.4, -264.2),
+    ["Ayra"] = Vector3.new(324.5, 22.9, -199.3),
+    ["Beevor"] = Vector3.new(105.8, 169.6, -60.4),
+    ["Binder Of Mourns"] = Vector3.new(-23, 183.6, -120),
+    ["Blacksmith's Kit (Crypt)"] = Vector3.new(-468, 72, -1348),
+    ["Blacksmith's Kit (The Glade)"] = Vector3.new(76.1, 174.3, -158.3),
+    ["Blanche"] = Vector3.new(247.7, 11.9, -312.3),
+    ["Bobby, Blacksmith"] = Vector3.new(-461.7, 68.4, -1373.9),
+    ["Bones McGee"] = Vector3.new(14.3, 196.3, 62.1),
+    ["Brian"] = Vector3.new(-91.8, 186.3, 57.6),
+    ["Briar"] = Vector3.new(-131, 9.3, 20.6),
+    ["Buford"] = Vector3.new(45.2, 180.3, 149.5),
+    ["Cadogan"] = Vector3.new(-15.2, 170.7, 91.2),
+    ["Calvin, Potion Specialist"] = Vector3.new(12.9, 168.9, -226.9),
+    ["Clement, Merchant"] = Vector3.new(242.5, 185.5, 1),
+    ["Crypt Obelisk"] = Vector3.new(-1201.4, 37.4, -2016.9),
+    ["Dagger (Crypt)"] = Vector3.new(-464.4, 72.2, -1385.2),
+    ["Dagger (The Glade)"] = Vector3.new(66.2, 175, -190.2),
+    ["Dante"] = Vector3.new(53, 179.5, 173.8),
+    ["Dark Shores"] = Vector3.new(-21, 192.8, -105.4),
+    ["David, Merchant"] = Vector3.new(-527.6, 73.4, -1485.8),
+    ["Dimitri"] = Vector3.new(83.4, 179.3, 148),
+    ["Eadgyth, Grand Arbiter Of Refinement and Supreme Authority Of Impeccable Taste"] = Vector3.new(92.3, 169.6, -78.4),
+    ["Egg"] = Vector3.new(339.2, 14.8, -286.8),
+    ["Eldigan"] = Vector3.new(-27.2, 177.2, -100),
+    ["Elian"] = Vector3.new(38.5, 45.9, 84.7),
+    ["Emilie"] = Vector3.new(81.2, 179.5, 162.1),
+    ["Formal Attire"] = Vector3.new(273.5, 189, 1),
+    ["Formal Finery"] = Vector3.new(-130.9, 189.5, 4.9),
+    ["Francesca"] = Vector3.new(-15.1, 177.3, -118.6),
+    ["Fraser"] = Vector3.new(41.4, 179.3, 165.3),
+    ["Fritz"] = Vector3.new(299.1, 12.9, -254.7),
+    ["Gilmore"] = Vector3.new(-110.1, 182.6, 9.4),
+    ["Glade Obelisk"] = Vector3.new(-88.8, 191.4, -118.8),
+    ["Goblin Tinkerer"] = Vector3.new(19.9, 22.7, -95),
+    ["Greatsword (Crypt)"] = Vector3.new(-468.6, 72.4, -1385.6),
+    ["Greatsword (The Glade)"] = Vector3.new(71.2, 176, -189.6),
+    ["Havelock"] = Vector3.new(13.1, 174.7, -96.4),
+    ["Heavy Scale (Crypt)"] = Vector3.new(-473, 72, -1384.5),
+    ["Heavy Scale (The Glade)"] = Vector3.new(87.5, 174.3, -185.6),
+    ["Isabel"] = Vector3.new(31.8, 172.3, 72.3),
+    ["Isaiah"] = Vector3.new(306.9, 12.9, -344.9),
+    ["Jemima"] = Vector3.new(-453.3, 72.4, -1524.9),
+    ["Jenova"] = Vector3.new(-29, 176.2, 29.2),
+    ["Jonathan, Blacksmith"] = Vector3.new(83.5, 171.1, -181),
+    ["Kaladin"] = Vector3.new(55.1, 195.3, 162.1),
+    ["Kelsier"] = Vector3.new(-25.8, 170.8, 102.8),
+    ["Lachesis"] = Vector3.new(67.6, 181.7, 172.5),
+    ["Lantern (Crypt)"] = Vector3.new(-462.6, 71.4, -1385.1),
+    ["Lantern (The Glade)"] = Vector3.new(70.3, 173.9, -180.2),
+    ["Lasting Memories"] = Vector3.new(55.3, 201.7, 174.6),
+    ["Layle"] = Vector3.new(85.8, 169, -43.3),
+    ["Layton"] = Vector3.new(269.6, 11.9, -341.1),
+    ["Malachi"] = Vector3.new(99.8, 169.4, -69.7),
+    ["Marcus"] = Vector3.new(210.7, 182.6, 33.7),
+    ["Maximillian"] = Vector3.new(66.5, 179.5, 142.3),
+    ["Maxwell, The Guide"] = Vector3.new(-17.9, 186.9, -31.1),
+    ["Mystery Monster"] = Vector3.new(-23.2, 183.6, -92.6),
+    ["Ogma"] = Vector3.new(-202.3, 12, -335.4),
+    ["Pubert, Illegal Potion Dealer"] = Vector3.new(-584.7, 104.4, -1638.9),
+    ["Rapier (Crypt)"] = Vector3.new(-465, 70.7, -1381.5),
+    ["Rapier (The Glade)"] = Vector3.new(74.1, 175.5, -189.2),
+    ["Remus"] = Vector3.new(166.9, 20.9, -299.8),
+    ["Rough Waters"] = Vector3.new(-24.6, 183.6, -111.1),
+    ["Runner's Outfit (Crypt)"] = Vector3.new(-512.5, 77, -1477.5),
+    ["Runner's Outfit (The Glade)"] = Vector3.new(117, 176.6, 38.7),
+    ["Rupert"] = Vector3.new(70.5, 169.6, -73.5),
+    ["Saffron"] = Vector3.new(92.1, 170, -47.2),
+    ["Sapphron"] = Vector3.new(-1355, 41.4, -626.5),
+    ["Sergei"] = Vector3.new(76.2, 169.6, -78.2),
+    ["Shimmer Obelisk"] = Vector3.new(-1344.2, 37.1, -284.3),
+    ["Sir Glade"] = Vector3.new(98.4, 192.2, 90.9),
+    ["Smiling Bag"] = Vector3.new(110.8, 173.1, -52.1),
+    ["Sonion, Stylist"] = Vector3.new(-114.7, 190.7, 2.2),
+    ["Spear (Crypt)"] = Vector3.new(-469.5, 71.9, -1383.1),
+    ["Spear (The Glade)"] = Vector3.new(76.4, 175, -189.2),
+    ["Staff Of Sparkling"] = Vector3.new(10.9, 171.7, -213),
+    ["Stuart"] = Vector3.new(-155.8, 189.5, -42),
+    ["Suit"] = Vector3.new(83.1, 173, -84.1),
+    ["Swift"] = Vector3.new(117, 184.8, 36),
+    ["Sword (Crypt)"] = Vector3.new(-466.3, 71.7, -1385),
+    ["Sword (The Glade)"] = Vector3.new(68.5, 175.5, -190.4),
+    ["The Blooming Grotto"] = Vector3.new(80.2, 201.7, 164.3),
+    ["The Crazy Man of The Glade"] = Vector3.new(-223.6, 193.2, 11.2),
+    ["The Glade Mines Gatekeeper"] = Vector3.new(301, 16.9, -372),
+    ["The Wisp"] = Vector3.new(-5694.4, 12.1, -234.5),
+    ["Thick Cloak"] = Vector3.new(245, 189, 8.5),
+    ["Thomas"] = Vector3.new(-355.5, 67.4, -1573.6),
+    ["Viola"] = Vector3.new(57.1, 179.5, 161.3),
+    ["Vorax"] = Vector3.new(-627, 74.5, -1456),
+    ["Yapin"] = Vector3.new(47.4, 179.5, 160.2),
+    ["Ywain"] = Vector3.new(-504, 79.4, -1332.5)
+}
+
+local WORLD_NPC_NAMES = {
+    "A Florian",
+    "Adam",
+    "Ambrose",
+    "Atmere",
+    "Aurora Wisp",
+    "Ayra",
+    "Beevor",
+    "Binder Of Mourns",
+    "Blacksmith's Kit (Crypt)",
+    "Blacksmith's Kit (The Glade)",
+    "Blanche",
+    "Bobby, Blacksmith",
+    "Bones McGee",
+    "Brian",
+    "Briar",
+    "Buford",
+    "Cadogan",
+    "Calvin, Potion Specialist",
+    "Clement, Merchant",
+    "Crypt Obelisk",
+    "Dagger (Crypt)",
+    "Dagger (The Glade)",
+    "Dante",
+    "Dark Shores",
+    "David, Merchant",
+    "Dimitri",
+    "Eadgyth, Grand Arbiter Of Refinement and Supreme Authority Of Impeccable Taste",
+    "Egg",
+    "Eldigan",
+    "Elian",
+    "Emilie",
+    "Formal Attire",
+    "Formal Finery",
+    "Francesca",
+    "Fraser",
+    "Fritz",
+    "Gilmore",
+    "Glade Obelisk",
+    "Goblin Tinkerer",
+    "Greatsword (Crypt)",
+    "Greatsword (The Glade)",
+    "Havelock",
+    "Heavy Scale (Crypt)",
+    "Heavy Scale (The Glade)",
+    "Isabel",
+    "Isaiah",
+    "Jemima",
+    "Jenova",
+    "Jonathan, Blacksmith",
+    "Kaladin",
+    "Kelsier",
+    "Lachesis",
+    "Lantern (Crypt)",
+    "Lantern (The Glade)",
+    "Lasting Memories",
+    "Layle",
+    "Layton",
+    "Malachi",
+    "Marcus",
+    "Maximillian",
+    "Maxwell, The Guide",
+    "Mystery Monster",
+    "Ogma",
+    "Pubert, Illegal Potion Dealer",
+    "Rapier (Crypt)",
+    "Rapier (The Glade)",
+    "Remus",
+    "Rough Waters",
+    "Runner's Outfit (Crypt)",
+    "Runner's Outfit (The Glade)",
+    "Rupert",
+    "Saffron",
+    "Sapphron",
+    "Sergei",
+    "Shimmer Obelisk",
+    "Sir Glade",
+    "Smiling Bag",
+    "Sonion, Stylist",
+    "Spear (Crypt)",
+    "Spear (The Glade)",
+    "Staff Of Sparkling",
+    "Stuart",
+    "Suit",
+    "Swift",
+    "Sword (Crypt)",
+    "Sword (The Glade)",
+    "The Blooming Grotto",
+    "The Crazy Man of The Glade",
+    "The Glade Mines Gatekeeper",
+    "The Wisp",
+    "Thick Cloak",
+    "Thomas",
+    "Viola",
+    "Vorax",
+    "Yapin",
+    "Ywain"
+}
+
+local MAP_STREAM_SECTORS = {
+    Vector3.new(242.5, 185.5, 1),
+    Vector3.new(70.5, 175, -80),
+    Vector3.new(-25, 180, -100),
+    Vector3.new(-120, 190, 0),
+    Vector3.new(-470, 72, -1380),
+    Vector3.new(-530, 75, -1490),
+    Vector3.new(-585, 105, -1640),
+    Vector3.new(-1200, 38, -2016),
+    Vector3.new(-1350, 42, -626),
+    Vector3.new(250, 1442, -264),
+    Vector3.new(-5694, 12, -235),
+    Vector3.new(300, 20, -300),
+}
+
 if _G.__VeilHubUnload then
     pcall(_G.__VeilHubUnload)
 end
@@ -487,9 +708,74 @@ local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
+local FlyBodyVelocity = nil
+local FlyBodyGyro = nil
+
+local function GetCharacter()
+    return LocalPlayer.Character
+end
+
+local function GetRootPart()
+    local char = GetCharacter()
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function GetHumanoid()
+    local char = GetCharacter()
+    return char and char:FindFirstChildOfClass("Humanoid")
+end
+
+local function StopFlying()
+    if FlyBodyVelocity then
+        FlyBodyVelocity:Destroy()
+        FlyBodyVelocity = nil
+    end
+    if FlyBodyGyro then
+        FlyBodyGyro:Destroy()
+        FlyBodyGyro = nil
+    end
+    local hum = GetHumanoid()
+    if hum then
+        hum.PlatformStand = false
+        pcall(function()
+            hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end)
+    end
+end
+
+local function StartFlying()
+    local hrp = GetRootPart()
+    local hum = GetHumanoid()
+    if not hrp then return end
+
+    StopFlying()
+
+    FlyBodyVelocity = Instance.new("BodyVelocity")
+    FlyBodyVelocity.Name = "__FlyBV"
+    FlyBodyVelocity.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    FlyBodyVelocity.Velocity = Vector3.zero
+    FlyBodyVelocity.Parent = hrp
+
+    FlyBodyGyro = Instance.new("BodyGyro")
+    FlyBodyGyro.Name = "__FlyBG"
+    FlyBodyGyro.MaxTorque = Vector3.new(1e6, 1e6, 1e6)
+    FlyBodyGyro.P = 10000
+    FlyBodyGyro.CFrame = hrp.CFrame
+    FlyBodyGyro.Parent = hrp
+
+    if hum then
+        hum.PlatformStand = true
+    end
+end
+
 _G.__VeilHubLibrary = Library
 _G.__VeilHubUnload = function()
     _G.__VeilHubRunning = false
+    StopFlying()
+    local hum = GetHumanoid()
+    if hum then
+        hum.WalkSpeed = 17
+    end
     Library:Unload()
 end
 
@@ -506,17 +792,15 @@ local MapDropsLabel = nil
 local FilterMatchesLabel = nil
 local SessionPickedLabel = nil
 
-local function GetCharacter()
-    return LocalPlayer.Character
-end
-
-local function GetRootPart()
-    local char = GetCharacter()
-    return char and char:FindFirstChild("HumanoidRootPart")
-end
-
-local function GetDropPart(d)
-    return d and (d.PrimaryPart or d:FindFirstChild("Handle") or d:FindFirstChildWhichIsA("BasePart"))
+local function GetDropPosition(d)
+    if not d then return nil end
+    local p = d.PrimaryPart or d:FindFirstChild("Handle") or d:FindFirstChildWhichIsA("BasePart")
+    if p then return p.Position end
+    local piv = d:GetPivot()
+    if piv and piv.Position ~= Vector3.zero then
+        return piv.Position
+    end
+    return nil
 end
 
 local function GetBackpackCount()
@@ -535,15 +819,41 @@ local function SafeTeleport(targetPos)
     local hrp = GetRootPart()
     if not hrp then return false end
 
-    pcall(function()
-        LocalPlayer:RequestStreamAroundAsync(targetPos, 1)
-    end)
-
-    local finalPos = targetPos + Vector3.new(0, 1.2, 0)
     hrp.AssemblyLinearVelocity = Vector3.zero
     hrp.AssemblyAngularVelocity = Vector3.zero
-    hrp.CFrame = CFrame.new(finalPos)
+
+    pcall(function()
+        LocalPlayer:RequestStreamAroundAsync(targetPos, 2)
+    end)
+
+    local safePos = targetPos + Vector3.new(0, 2.5, 0)
+    hrp.CFrame = CFrame.new(safePos)
+
+    local platform = Instance.new("Part")
+    platform.Name = "__SafePlatform"
+    platform.Size = Vector3.new(10, 1, 10)
+    platform.CFrame = CFrame.new(targetPos - Vector3.new(0, 0.5, 0))
+    platform.Anchored = true
+    platform.Transparency = 1
+    platform.CanCollide = true
+    platform.Parent = Workspace
+
+    task.delay(0.5, function()
+        if platform and platform.Parent then
+            platform:Destroy()
+        end
+    end)
+
     return true
+end
+
+local function StreamEntireMap()
+    for _, sector in ipairs(MAP_STREAM_SECTORS) do
+        if not _G.__VeilHubRunning then break end
+        pcall(function()
+            LocalPlayer:RequestStreamAroundAsync(sector, 1)
+        end)
+    end
 end
 
 local function GetSanity()
@@ -584,14 +894,12 @@ local function PerformSellRoutine()
         return false
     end
 
+    local merchantPos = Vector3.new(242.5, 185.5, 1)
     local merchant = FindMerchant()
-    if not merchant then
-        Library:Notify("Merchant Clement not found on map!", 4)
-        IsSelling = false
-        return false
+    if merchant then
+        merchantPos = merchant:GetPivot().Position
     end
 
-    local merchantPos = merchant:GetPivot().Position
     local resumeCFrame = hrp.CFrame
 
     SafeTeleport(merchantPos + Vector3.new(0, 0, 4))
@@ -651,6 +959,10 @@ local function PerformSellRoutine()
         return false
     end
 
+    if not merchant then
+        merchant = FindMerchant()
+    end
+
     MerchantSellMode:Fire(true, merchant)
     task.wait(0.15)
     SellItemsEvent:FireServer(toolsToSell)
@@ -677,8 +989,8 @@ local function VacuumNearbyDrops(centerPos, maxDist)
         if (not exp or tick() >= exp) and nearby:FindFirstChild("Argument") and nearby.Argument.Value == "PickupDrop" then
             local r = nearby:GetAttribute("Rarity") or "Common"
             if allowed[r] then
-                local p = GetDropPart(nearby)
-                if p and (centerPos - p.Position).Magnitude <= maxDist then
+                local pPos = GetDropPosition(nearby)
+                if pPos and (centerPos - pPos).Magnitude <= maxDist then
                     InteractPromptEvent:FireServer("PickupDrop", nearby)
                     count = count + 1
                 end
@@ -696,10 +1008,9 @@ local function CollectSingleDrop(drop)
     local hrp = GetRootPart()
     if not hrp then return false end
 
-    local targetPart = GetDropPart(drop)
-    if not targetPart then return false end
+    local targetPos = GetDropPosition(drop)
+    if not targetPos then return false end
 
-    local targetPos = targetPart.Position
     SafeTeleport(targetPos)
 
     local delayTime = Options.PickupDelay.Value or 0.10
@@ -707,7 +1018,12 @@ local function CollectSingleDrop(drop)
         task.wait(delayTime)
     end
 
-    local argVal = drop:FindFirstChild("Argument") and drop.Argument.Value or "PickupDrop"
+    local argVal = "PickupDrop"
+    local argObj = drop:FindFirstChild("Argument")
+    if argObj and argObj.Value then
+        argVal = argObj.Value
+    end
+
     InteractPromptEvent:FireServer(argVal, drop)
 
     if Toggles.VacuumNearby and Toggles.VacuumNearby.Value then
@@ -760,9 +1076,9 @@ local function GetFilteredDrops()
             if not exp or now >= exp then
                 local r = d:GetAttribute("Rarity") or "Common"
                 if allowed[r] then
-                    local p = GetDropPart(d)
-                    if p then
-                        local dist = (centerPos - p.Position).Magnitude
+                    local pPos = GetDropPosition(d)
+                    if pPos then
+                        local dist = (centerPos - pPos).Magnitude
                         if maxRadius == 0 or dist <= maxRadius then
                             table.insert(filtered, { drop = d, dist = dist })
                         end
@@ -834,6 +1150,7 @@ local Window = Library:CreateWindow({
 local Tabs = {
     Farm = Window:AddTab("Auto Pickup", "package"),
     Sell = Window:AddTab("Auto Sell", "coins"),
+    Movement = Window:AddTab("Movement", "zap"),
     Teleports = Window:AddTab("Teleports", "map-pin"),
     ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
 }
@@ -913,6 +1230,23 @@ FarmRight:AddButton({
     end,
     DoubleClick = false,
     Tooltip = "Updates drop scanner counts immediately",
+})
+
+FarmRight:AddButton({
+    Text = "Pre-Stream Entire Map",
+    Func = function()
+        Library:Notify("Scanning and pre-streaming entire map...", 2)
+        task.spawn(function()
+            StreamEntireMap()
+            task.wait(0.5)
+            local matches, total = GetFilteredDrops()
+            if MapDropsLabel then MapDropsLabel:SetText("Total Drops on Map: " .. total) end
+            if FilterMatchesLabel then FilterMatchesLabel:SetText("Matching Filter: " .. #matches) end
+            Library:Notify(string.format("Map streamed! Found %d total drops (%d matching).", total, #matches), 3)
+        end)
+    end,
+    DoubleClick = false,
+    Tooltip = "Requests server to stream all world sectors into client memory",
 })
 
 local SellLeft = Tabs.Sell:AddLeftGroupbox("Merchant Auto-Sell")
@@ -1023,6 +1357,68 @@ SellRight:AddButton({
     Tooltip = "Unchecks all items in the protected list",
 })
 
+local MoveLeft = Tabs.Movement:AddLeftGroupbox("WalkSpeed")
+
+MoveLeft:AddToggle("EnableWalkSpeed", {
+    Text = "Enable Custom WalkSpeed",
+    Default = DEFAULT_CONFIG.EnableWalkSpeed,
+    Tooltip = "Overrides player walking speed",
+}):AddKeyPicker("WalkSpeedKeybind", {
+    Default = DEFAULT_CONFIG.WalkSpeedKeybind,
+    SyncToggleState = true,
+    Mode = "Toggle",
+    Text = "WalkSpeed Keybind",
+    NoUI = false,
+})
+
+MoveLeft:AddSlider("WalkSpeed", {
+    Text = "WalkSpeed",
+    Default = DEFAULT_CONFIG.WalkSpeed,
+    Min = 16,
+    Max = 150,
+    Rounding = 0,
+    Suffix = " studs/s",
+    Tooltip = "Character move speed (Default game speed is 17)",
+})
+
+local MoveRight = Tabs.Movement:AddRightGroupbox("Flight and Noclip")
+
+MoveRight:AddToggle("Fly", {
+    Text = "Enable Fly",
+    Default = DEFAULT_CONFIG.Fly,
+    Tooltip = "Fly freely across map using WASD + Space + Shift",
+}):AddKeyPicker("FlyKeybind", {
+    Default = DEFAULT_CONFIG.FlyKeybind,
+    SyncToggleState = true,
+    Mode = "Toggle",
+    Text = "Fly Keybind",
+    NoUI = false,
+})
+
+MoveRight:AddSlider("FlySpeed", {
+    Text = "Fly Speed",
+    Default = DEFAULT_CONFIG.FlySpeed,
+    Min = 10,
+    Max = 250,
+    Rounding = 0,
+    Suffix = " studs/s",
+    Tooltip = "Flight movement velocity",
+})
+
+MoveRight:AddDivider()
+
+MoveRight:AddToggle("Noclip", {
+    Text = "Enable Noclip",
+    Default = DEFAULT_CONFIG.Noclip,
+    Tooltip = "Pass through terrain, walls, and obstacles",
+}):AddKeyPicker("NoclipKeybind", {
+    Default = DEFAULT_CONFIG.NoclipKeybind,
+    SyncToggleState = true,
+    Mode = "Toggle",
+    Text = "Noclip Keybind",
+    NoUI = false,
+})
+
 local TpLeft = Tabs.Teleports:AddLeftGroupbox("Quest Teleports")
 
 TpLeft:AddButton({
@@ -1043,50 +1439,9 @@ TpLeft:AddButton({
     Tooltip = "Teleports to closest marker in QuestMarkers",
 })
 
-local TpRight = Tabs.Teleports:AddRightGroupbox("NPCs and Locations")
+TpLeft:AddDivider()
 
-local npcList = {}
-local npcsFolder = Workspace:FindFirstChild("NPCs")
-if npcsFolder then
-    for _, n in ipairs(npcsFolder:GetChildren()) do
-        if not table.find(npcList, n.Name) then
-            table.insert(npcList, n.Name)
-        end
-    end
-    table.sort(npcList)
-end
-if #npcList == 0 then
-    npcList = { "Clement, Merchant", "Calvin, Potion Specialist", "Fraser", "Buford", "Dante" }
-end
-
-TpRight:AddDropdown("TargetNPC", {
-    Values = npcList,
-    Default = "Clement, Merchant",
-    Multi = false,
-    Searchable = true,
-    Text = "World NPC",
-    Tooltip = "Search and pick any NPC on map to teleport",
-})
-
-TpRight:AddButton({
-    Text = "Teleport to Selected NPC",
-    Func = function()
-        local name = Options.TargetNPC.Value
-        local npc = npcsFolder and npcsFolder:FindFirstChild(name)
-        if npc then
-            SafeTeleport(npc:GetPivot().Position + Vector3.new(0, 0, 4))
-            Library:Notify("Teleported to " .. name .. "!", 3)
-        else
-            Library:Notify("NPC not found.", 3)
-        end
-    end,
-    DoubleClick = false,
-    Tooltip = "Teleport immediately to the chosen NPC",
-})
-
-TpRight:AddDivider()
-
-TpRight:AddButton({
+TpLeft:AddButton({
     Text = "Teleport to The Glade Town",
     Func = function()
         SafeTeleport(Vector3.new(238, 186, 0))
@@ -1096,7 +1451,7 @@ TpRight:AddButton({
     Tooltip = "Teleport to Town center",
 })
 
-TpRight:AddButton({
+TpLeft:AddButton({
     Text = "Teleport to Sky Safe Altitude",
     Func = function()
         local hrp = GetRootPart()
@@ -1107,6 +1462,42 @@ TpRight:AddButton({
     end,
     DoubleClick = false,
     Tooltip = "Teleports player high into sky to avoid danger",
+})
+
+local TpRight = Tabs.Teleports:AddRightGroupbox("World NPCs and Locations (96)")
+
+TpRight:AddDropdown("TargetNPC", {
+    Values = WORLD_NPC_NAMES,
+    Default = "Clement, Merchant",
+    Multi = false,
+    Searchable = true,
+    Text = "World NPC",
+    Tooltip = "Search and select any of the 96 world NPCs / Vendors / Obelisks",
+})
+
+TpRight:AddButton({
+    Text = "Teleport to Selected NPC",
+    Func = function()
+        local name = Options.TargetNPC.Value
+        local cachedPos = WORLD_NPCS[name]
+        local npcsFolder = Workspace:FindFirstChild("NPCs")
+        local livePos = nil
+        if npcsFolder then
+            local liveNpc = npcsFolder:FindFirstChild(name)
+            if liveNpc then
+                livePos = liveNpc:GetPivot().Position
+            end
+        end
+        local finalPos = livePos or cachedPos
+        if finalPos then
+            SafeTeleport(finalPos + Vector3.new(0, 0, 4))
+            Library:Notify("Teleported to " .. name .. "!", 3)
+        else
+            Library:Notify("NPC coordinate not found.", 3)
+        end
+    end,
+    DoubleClick = false,
+    Tooltip = "Bypasses StreamingEnabled and teleports directly to NPC",
 })
 
 local SettingsLeft = Tabs["UI Settings"]:AddLeftGroupbox("Menu")
@@ -1120,6 +1511,11 @@ SettingsLeft:AddButton({
     Text = "Unload Script",
     Func = function()
         _G.__VeilHubRunning = false
+        StopFlying()
+        local hum = GetHumanoid()
+        if hum then
+            hum.WalkSpeed = 17
+        end
         Library:Unload()
     end,
     DoubleClick = true,
@@ -1145,7 +1541,10 @@ _G.VeilHub = {
     TeleportToActiveQuestWaypoint = TeleportToActiveQuestWaypoint,
     TeleportToNearestQuestMarker = TeleportToNearestQuestMarker,
     CollectSingleDrop = CollectSingleDrop,
-    GetFilteredDrops = GetFilteredDrops
+    GetFilteredDrops = GetFilteredDrops,
+    StreamEntireMap = StreamEntireMap,
+    StartFlying = StartFlying,
+    StopFlying = StopFlying,
 }
 
 Toggles.AutoPickup:OnChanged(function()
@@ -1164,8 +1563,107 @@ Toggles.AutoPickup:OnChanged(function()
     end
 end)
 
+Toggles.Fly:OnChanged(function()
+    if Toggles.Fly.Value then
+        StartFlying()
+        Library:Notify("Fly enabled (WASD + Space + Shift)", 2)
+    else
+        StopFlying()
+        Library:Notify("Fly disabled", 2)
+    end
+end)
+
+Toggles.Noclip:OnChanged(function()
+    if Toggles.Noclip.Value then
+        Library:Notify("Noclip enabled", 2)
+    else
+        Library:Notify("Noclip disabled", 2)
+    end
+end)
+
+Toggles.EnableWalkSpeed:OnChanged(function()
+    if not Toggles.EnableWalkSpeed.Value then
+        local hum = GetHumanoid()
+        if hum then
+            hum.WalkSpeed = 17
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not _G.__VeilHubRunning then return end
+    if Toggles.Fly and Toggles.Fly.Value then
+        local hrp = GetRootPart()
+        local cam = Workspace.CurrentCamera
+        if hrp and cam and FlyBodyVelocity and FlyBodyVelocity.Parent == hrp then
+            local camCF = cam.CFrame
+            local flySpeed = Options.FlySpeed and Options.FlySpeed.Value or 50
+            local moveDir = Vector3.zero
+
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                moveDir = moveDir + camCF.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                moveDir = moveDir - camCF.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                moveDir = moveDir + camCF.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                moveDir = moveDir - camCF.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                moveDir = moveDir + Vector3.new(0, 1, 0)
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+                moveDir = moveDir - Vector3.new(0, 1, 0)
+            end
+
+            if moveDir.Magnitude > 0 then
+                FlyBodyVelocity.Velocity = moveDir.Unit * flySpeed
+            else
+                FlyBodyVelocity.Velocity = Vector3.zero
+            end
+
+            if FlyBodyGyro and FlyBodyGyro.Parent == hrp then
+                FlyBodyGyro.CFrame = camCF
+            end
+        elseif not FlyBodyVelocity or FlyBodyVelocity.Parent ~= hrp then
+            StartFlying()
+        end
+    end
+end)
+
+RunService.Stepped:Connect(function()
+    if not _G.__VeilHubRunning then return end
+    if Toggles.Noclip and Toggles.Noclip.Value then
+        local char = GetCharacter()
+        if char then
+            for _, p in ipairs(char:GetDescendants()) do
+                if p:IsA("BasePart") and p.CanCollide then
+                    p.CanCollide = false
+                end
+            end
+        end
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if not _G.__VeilHubRunning then return end
+    if Toggles.EnableWalkSpeed and Toggles.EnableWalkSpeed.Value then
+        local hum = GetHumanoid()
+        if hum and Options.WalkSpeed then
+            local targetSpeed = Options.WalkSpeed.Value
+            if hum.WalkSpeed ~= targetSpeed then
+                hum.WalkSpeed = targetSpeed
+            end
+        end
+    end
+end)
+
 task.spawn(function()
     local lastStatUpdate = 0
+    local lastMapStream = 0
     while _G.__VeilHubRunning do
         local now = tick()
         if now - lastStatUpdate >= 2 then
@@ -1178,6 +1676,11 @@ task.spawn(function()
         end
 
         if Toggles.AutoPickup and Toggles.AutoPickup.Value and not IsSelling then
+            if now - lastMapStream >= 40 then
+                lastMapStream = now
+                task.spawn(StreamEntireMap)
+            end
+
             local curSanity = GetSanity()
             if curSanity < 20 then
                 if StatusLabel then StatusLabel:SetText("Status: Critical Sanity (" .. curSanity .. "/100)! Recovering...") end
@@ -1234,7 +1737,8 @@ task.spawn(function()
                         if StatusLabel then StatusLabel:SetText("Status: Collecting " .. target.Name) end
                         CollectSingleDrop(target)
                     else
-                        if StatusLabel then StatusLabel:SetText("Status: Waiting for Matching Drops") end
+                        if StatusLabel then StatusLabel:SetText("Status: Streaming Map for Drops...") end
+                        StreamEntireMap()
                         task.wait(0.5)
                     end
                 end

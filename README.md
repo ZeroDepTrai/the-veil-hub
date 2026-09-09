@@ -32,14 +32,25 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ZeroDepTrai/the-veil-
 - **Auto-Sell on Full**: Automatically teleports to Merchant Clement when inventory reaches capacity ($\ge 148/150$), sells eligible items, and returns to farm.
 - **Manual Sell Now Button**: Instantly triggers a sell run at Clement's stall on demand.
 
-### 3. World & Quest Teleports
+### 3. Movement & Exploits
+- **Custom WalkSpeed**: Configurable speed slider (16 to 150 studs/s) with persistent heartbeat enforcement.
+  - Keybind support (Obsidian KeyPicker, customizable in UI).
+- **Fly Mode**: Camera-relative flight controller with zero gravity drift (`W`, `A`, `S`, `D`, `Space` for ascend, `LeftShift` / `LeftControl` for descend).
+  - Configurable fly speed slider (10 to 250 studs/s).
+  - Default Keybind: **`F`**.
+- **Noclip**: High-frequency collision bypass via `Stepped` event, allowing full traversal through terrain, walls, and structures.
+  - Default Keybind: **`N`**.
+
+### 4. World & Quest Teleports (StreamingEnabled Bypass)
+- **StreamingEnabled Bypass & Anti-Void**: All teleports automatically pre-fetch streaming chunks via `RequestStreamAroundAsync` and create an imperceptible collision safety platform underneath the player, completely eliminating void falling or clipping through unstreamed terrain.
+- **Pre-Stream Entire Map**: Scans and pre-loads all 12 major world sectors across the map, discovering drops and entities anywhere in the world.
+- **All 96 World NPCs & Obelisks**: Complete database of pre-cached coordinates for all 96 NPCs, Vendors, Quest-givers, and Obelisks across the map.
 - **Active Quest Waypoint**: Teleports directly to the active objective marker (`QuestWaypointAnchor`).
 - **Nearest Quest NPC**: Teleports to closest NPC quest marker (`QuestMarkers`).
-- **All World NPCs Dropdown**: Search and teleport to any of the 80 NPCs across the world (`Clement, Merchant`, `Calvin, Potion Specialist`, `Fraser`, `Buford`, `Dante`, etc.).
 - **The Glade Town**: Instant teleport to Town center.
 - **Sky Safe Altitude**: Emergency escape 200 studs into the air.
 
-### 4. UI Settings
+### 5. UI Settings
 - Toggle UI Visibility: **`RightShift`** (customizable in UI Settings).
 - Obsidian ThemeManager & SaveManager config saving.
 - Double-click Unload button.
