@@ -21,14 +21,9 @@ local DEFAULT_CONFIG = {
         ["Common"] = true,
     },
     ProtectedItems = {
-        ["Muramasa"] = true,
-        ["Recall Potion"] = true,
-        ["Cloud In A Bottle"] = true,
-        ["Thornvine"] = true,
-        ["Sapphire"] = true,
-        ["Emerald"] = true,
-        ["Ruby"] = true,
-        ["Diamond"] = true,
+        ["Idol of Hatred"] = true,
+        ["Totem of Hatred"] = true,
+        ["Stone Accord"] = true,
     }
 }
 
@@ -211,6 +206,7 @@ local TRELLO_ITEMS = {
     "Crusader Cuirass",
     "Cursed Hammer",
     "Cyst Worm",
+    "DPS Meter",
     "Dagger",
     "Dark Amulet",
     "Deadlight",
@@ -218,7 +214,6 @@ local TRELLO_ITEMS = {
     "Desecrated Carapace",
     "Diamond",
     "Diamond Staff",
-    "DPS Meter",
     "Dread's Decree",
     "Ebon Cloak",
     "Elegy Of The Tides",
@@ -446,6 +441,7 @@ local TRELLO_ITEMS = {
     "Topaz",
     "Topaz Staff",
     "Tophat",
+    "Totem of Hatred",
     "Tribal Visage",
     "Trumpet",
     "Unformed Fang",
@@ -550,6 +546,20 @@ local function SafeTeleport(targetPos)
     return true
 end
 
+local function GetSanity()
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    local mg = pg and pg:FindFirstChild("MainGui")
+    local sb = mg and mg:FindFirstChild("SanityBar")
+    local sc = sb and sb:FindFirstChild("SanityCount")
+    if sc and sc.Text then
+        local cur = string.match(sc.Text, "(%d+)")
+        if cur then
+            return tonumber(cur) or 100
+        end
+    end
+    return 100
+end
+
 local function FindMerchant()
     local npcs = Workspace:FindFirstChild("NPCs")
     if npcs then
@@ -603,7 +613,15 @@ local function PerformSellRoutine()
         if tool:IsA("Tool") and tool.Name ~= "Bag" then
             local sp = tool:FindFirstChild("SellPrice")
             if sp and sp.Value > 0 then
-                local isProtected = protectByName and (protectedItems[tool.Name] == true)
+                local isProtected = false
+                if protectByName then
+                    if protectedItems[tool.Name] == true then
+                        isProtected = true
+                    elseif (tool.Name == "Idol of Hatred" or tool.Name == "Totem of Hatred") and (protectedItems["Idol of Hatred"] or protectedItems["Totem of Hatred"]) then
+                        isProtected = true
+                    end
+                end
+
                 if not isProtected then
                     local rarityObj = tool:FindFirstChild("Rarity")
                     local rarity = rarityObj and rarityObj.Value or "Common"
@@ -671,6 +689,10 @@ local function VacuumNearbyDrops(centerPos, maxDist)
 end
 
 local function CollectSingleDrop(drop)
+    if GetSanity() < 20 then
+        return false
+    end
+
     local hrp = GetRootPart()
     if not hrp then return false end
 
@@ -1156,34 +1178,65 @@ task.spawn(function()
         end
 
         if Toggles.AutoPickup and Toggles.AutoPickup.Value and not IsSelling then
-            local bpCount = GetBackpackCount()
-            if bpCount >= 148 then
-                if Toggles.AutoSellOnFull and Toggles.AutoSellOnFull.Value then
-                    if StatusLabel then StatusLabel:SetText("Status: Inventory Full! Auto-Selling...") end
-                    Library:Notify("Inventory full (" .. bpCount .. "/150). Auto-selling at Clement...", 3)
-                    PerformSellRoutine()
-                    local newCount = GetBackpackCount()
-                    if newCount >= 148 then
-                        if StatusLabel then StatusLabel:SetText("Status: Paused (Inventory Still Full)") end
-                        Library:Notify("Auto-Pickup paused: No items were sold. Inventory full!", 5)
-                        Toggles.AutoPickup:SetValue(false)
+            local curSanity = GetSanity()
+            if curSanity < 20 then
+                if StatusLabel then StatusLabel:SetText("Status: Critical Sanity (" .. curSanity .. "/100)! Recovering...") end
+                Library:Notify("Sanity critical (" .. curSanity .. "/100)! Retreating to spawn to recover...", 4)
+
+                local safePos = (InitialFarmCFrame and InitialFarmCFrame.Position) or Vector3.new(238, 186, 0)
+                SafeTeleport(safePos)
+
+                local waitCount = 0
+                while _G.__VeilHubRunning and Toggles.AutoPickup.Value do
+                    task.wait(1)
+                    waitCount = waitCount + 1
+                    local s = GetSanity()
+                    if s >= 90 then
+                        Library:Notify("Sanity recovered (" .. s .. "/100)! Resuming auto-pickup.", 3)
+                        if StatusLabel then StatusLabel:SetText("Status: Farming Active") end
+                        break
                     else
-                        if StatusLabel then StatusLabel:SetText("Status: Farming Resumed") end
+                        if waitCount >= 6 and s <= 22 then
+                            SafeTeleport(Vector3.new(238, 186, 0))
+                        else
+                            local hrp = GetRootPart()
+                            if hrp and (hrp.Position - safePos).Magnitude > 15 then
+                                SafeTeleport(safePos)
+                            end
+                        end
+                        if StatusLabel then StatusLabel:SetText("Status: Recovering Sanity (" .. s .. "/100)...") end
                     end
-                else
-                    if StatusLabel then StatusLabel:SetText("Status: Paused (Inventory Full)") end
-                    Library:Notify("Inventory full (150/150)! Sell items or enable Auto-Sell.", 4)
-                    Toggles.AutoPickup:SetValue(false)
                 end
             else
-                local matches = GetFilteredDrops()
-                if #matches > 0 then
-                    local target = matches[1]
-                    if StatusLabel then StatusLabel:SetText("Status: Collecting " .. target.Name) end
-                    CollectSingleDrop(target)
+                local bpCount = GetBackpackCount()
+                if bpCount >= 148 then
+                    if Toggles.AutoSellOnFull and Toggles.AutoSellOnFull.Value then
+                        if StatusLabel then StatusLabel:SetText("Status: Inventory Full! Auto-Selling...") end
+                        Library:Notify("Inventory full (" .. bpCount .. "/150). Auto-selling at Clement...", 3)
+                        PerformSellRoutine()
+                        local newCount = GetBackpackCount()
+                        if newCount >= 148 then
+                            if StatusLabel then StatusLabel:SetText("Status: Paused (Inventory Still Full)") end
+                            Library:Notify("Auto-Pickup paused: No items were sold. Inventory full!", 5)
+                            Toggles.AutoPickup:SetValue(false)
+                        else
+                            if StatusLabel then StatusLabel:SetText("Status: Farming Resumed") end
+                        end
+                    else
+                        if StatusLabel then StatusLabel:SetText("Status: Paused (Inventory Full)") end
+                        Library:Notify("Inventory full! Enable Auto-Sell or clear inventory to continue.", 5)
+                        Toggles.AutoPickup:SetValue(false)
+                    end
                 else
-                    if StatusLabel then StatusLabel:SetText("Status: Waiting for Matching Drops") end
-                    task.wait(0.5)
+                    local matches = GetFilteredDrops()
+                    if #matches > 0 then
+                        local target = matches[1]
+                        if StatusLabel then StatusLabel:SetText("Status: Collecting " .. target.Name) end
+                        CollectSingleDrop(target)
+                    else
+                        if StatusLabel then StatusLabel:SetText("Status: Waiting for Matching Drops") end
+                        task.wait(0.5)
+                    end
                 end
             end
         end

@@ -18,6 +18,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ZeroDepTrai/the-veil-
 - **Rarity Filter**: Select specific drop rarities to collect (`Common`, `Uncommon`, `Rare`, `Elite`, `Legendary`, `Mythic`).
 - **Capacity Protection**: Monitors backpack capacity (`X/150`). Triggers Auto-Sell or pauses safely when full.
 - **Blacklist Unpickable Drops**: Automatically ignores items you already own (unique gear) or obstructed items so farming never halts.
+- **Built-in Sanity Recovery**: Automatically monitors sanity. If sanity drops below 20 (< 20), immediately teleports to spawn/The Glade town to recover sanity back to 90+, preventing death at 0 sanity. Fully built-in with zero configuration required.
 - **Return to Start**: Teleports you back to your starting spot when stopped.
 
 ### 2. Auto-Sell & Item Blacklist (Protection List)
