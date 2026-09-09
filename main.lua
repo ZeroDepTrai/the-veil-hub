@@ -492,6 +492,7 @@ local TRELLO_ITEMS = {
 local WORLD_NPCS = {
     ["A Florian"] = Vector3.new(-17.9, 40.9, 68),
     ["Adam"] = Vector3.new(195.9, 182.5, -3),
+    ["Aetherglow Obelisk"] = Vector3.new(-2518.5, 169, 1960),
     ["Ambrose"] = Vector3.new(115.5, 169.6, -55.8),
     ["Atmere"] = Vector3.new(116, 202.8, 21.3),
     ["Aurora Wisp"] = Vector3.new(249.2, 1442.4, -264.2),
@@ -508,8 +509,11 @@ local WORLD_NPCS = {
     ["Buford"] = Vector3.new(45.2, 180.3, 149.5),
     ["Cadogan"] = Vector3.new(-15.2, 170.7, 91.2),
     ["Calvin, Potion Specialist"] = Vector3.new(12.9, 168.9, -226.9),
+    ["Camp Zero Obelisk"] = Vector3.new(2887, 37.2, -3043.3),
     ["Clement, Merchant"] = Vector3.new(242.5, 185.5, 1),
+    ["Colosseum Obelisk"] = Vector3.new(2175, 12.6, 1227),
     ["Crypt Obelisk"] = Vector3.new(-1201.4, 37.4, -2016.9),
+    ["Cyst Obelisk"] = Vector3.new(1911.4, 37.1, 905.9),
     ["Dagger (Crypt)"] = Vector3.new(-464.4, 72.2, -1385.2),
     ["Dagger (The Glade)"] = Vector3.new(66.2, 175, -190.2),
     ["Dante"] = Vector3.new(53, 179.5, 173.8),
@@ -517,23 +521,26 @@ local WORLD_NPCS = {
     ["David, Merchant"] = Vector3.new(-527.6, 73.4, -1485.8),
     ["Dimitri"] = Vector3.new(83.4, 179.3, 148),
     ["Eadgyth, Grand Arbiter Of Refinement and Supreme Authority Of Impeccable Taste"] = Vector3.new(92.3, 169.6, -78.4),
+    ["Echohold Obelisk"] = Vector3.new(-130.6, 32.1, -1511.7),
     ["Egg"] = Vector3.new(339.2, 14.8, -286.8),
     ["Eldigan"] = Vector3.new(-27.2, 177.2, -100),
     ["Elian"] = Vector3.new(38.5, 45.9, 84.7),
     ["Emilie"] = Vector3.new(81.2, 179.5, 162.1),
+    ["Fissure Obelisk"] = Vector3.new(2306.9, -32.4, -2107.1),
     ["Formal Attire"] = Vector3.new(273.5, 189, 1),
     ["Formal Finery"] = Vector3.new(-130.9, 189.5, 4.9),
     ["Francesca"] = Vector3.new(-15.1, 177.3, -118.6),
     ["Fraser"] = Vector3.new(41.4, 179.3, 165.3),
     ["Fritz"] = Vector3.new(299.1, 12.9, -254.7),
     ["Gilmore"] = Vector3.new(-110.1, 182.6, 9.4),
-    ["Glade Obelisk"] = Vector3.new(-88.8, 191.4, -118.8),
+    ["Glade Obelisk"] = Vector3.new(-88.8, 191.5, -118.8),
     ["Goblin Tinkerer"] = Vector3.new(19.9, 22.7, -95),
     ["Greatsword (Crypt)"] = Vector3.new(-468.6, 72.4, -1385.6),
     ["Greatsword (The Glade)"] = Vector3.new(71.2, 176, -189.6),
     ["Havelock"] = Vector3.new(13.1, 174.7, -96.4),
     ["Heavy Scale (Crypt)"] = Vector3.new(-473, 72, -1384.5),
     ["Heavy Scale (The Glade)"] = Vector3.new(87.5, 174.3, -185.6),
+    ["Ironkeep Obelisk"] = Vector3.new(914.5, 91.2, 1580.4),
     ["Isabel"] = Vector3.new(31.8, 172.3, 72.3),
     ["Isaiah"] = Vector3.new(306.9, 12.9, -344.9),
     ["Jemima"] = Vector3.new(-453.3, 72.4, -1524.9),
@@ -547,12 +554,14 @@ local WORLD_NPCS = {
     ["Lasting Memories"] = Vector3.new(55.3, 201.7, 174.6),
     ["Layle"] = Vector3.new(85.8, 169, -43.3),
     ["Layton"] = Vector3.new(269.6, 11.9, -341.1),
+    ["Lone Obelisk"] = Vector3.new(-1752.9, 28.1, 856.1),
     ["Malachi"] = Vector3.new(99.8, 169.4, -69.7),
     ["Marcus"] = Vector3.new(210.7, 182.6, 33.7),
     ["Maximillian"] = Vector3.new(66.5, 179.5, 142.3),
     ["Maxwell, The Guide"] = Vector3.new(-17.9, 186.9, -31.1),
     ["Mystery Monster"] = Vector3.new(-23.2, 183.6, -92.6),
     ["Ogma"] = Vector3.new(-202.3, 12, -335.4),
+    ["Pale Obelisk"] = Vector3.new(2605, 55.2, -98.7),
     ["Pubert, Illegal Potion Dealer"] = Vector3.new(-584.7, 104.4, -1638.9),
     ["Rapier (Crypt)"] = Vector3.new(-465, 70.7, -1381.5),
     ["Rapier (The Glade)"] = Vector3.new(74.1, 175.5, -189.2),
@@ -563,9 +572,11 @@ local WORLD_NPCS = {
     ["Rupert"] = Vector3.new(70.5, 169.6, -73.5),
     ["Saffron"] = Vector3.new(92.1, 170, -47.2),
     ["Sapphron"] = Vector3.new(-1355, 41.4, -626.5),
+    ["Scorch Basin Obelisk"] = Vector3.new(1334.7, -170.9, -476.8),
     ["Sergei"] = Vector3.new(76.2, 169.6, -78.2),
     ["Shimmer Obelisk"] = Vector3.new(-1344.2, 37.1, -284.3),
     ["Sir Glade"] = Vector3.new(98.4, 192.2, 90.9),
+    ["Sky Obelisk"] = Vector3.new(249.3, 1442.4, -264.2),
     ["Smiling Bag"] = Vector3.new(110.8, 173.1, -52.1),
     ["Sonion, Stylist"] = Vector3.new(-114.7, 190.7, 2.2),
     ["Spear (Crypt)"] = Vector3.new(-469.5, 71.9, -1383.1),
@@ -591,6 +602,7 @@ local WORLD_NPCS = {
 local WORLD_NPC_NAMES = {
     "A Florian",
     "Adam",
+    "Aetherglow Obelisk",
     "Ambrose",
     "Atmere",
     "Aurora Wisp",
@@ -607,8 +619,11 @@ local WORLD_NPC_NAMES = {
     "Buford",
     "Cadogan",
     "Calvin, Potion Specialist",
+    "Camp Zero Obelisk",
     "Clement, Merchant",
+    "Colosseum Obelisk",
     "Crypt Obelisk",
+    "Cyst Obelisk",
     "Dagger (Crypt)",
     "Dagger (The Glade)",
     "Dante",
@@ -616,10 +631,12 @@ local WORLD_NPC_NAMES = {
     "David, Merchant",
     "Dimitri",
     "Eadgyth, Grand Arbiter Of Refinement and Supreme Authority Of Impeccable Taste",
+    "Echohold Obelisk",
     "Egg",
     "Eldigan",
     "Elian",
     "Emilie",
+    "Fissure Obelisk",
     "Formal Attire",
     "Formal Finery",
     "Francesca",
@@ -633,6 +650,7 @@ local WORLD_NPC_NAMES = {
     "Havelock",
     "Heavy Scale (Crypt)",
     "Heavy Scale (The Glade)",
+    "Ironkeep Obelisk",
     "Isabel",
     "Isaiah",
     "Jemima",
@@ -646,12 +664,14 @@ local WORLD_NPC_NAMES = {
     "Lasting Memories",
     "Layle",
     "Layton",
+    "Lone Obelisk",
     "Malachi",
     "Marcus",
     "Maximillian",
     "Maxwell, The Guide",
     "Mystery Monster",
     "Ogma",
+    "Pale Obelisk",
     "Pubert, Illegal Potion Dealer",
     "Rapier (Crypt)",
     "Rapier (The Glade)",
@@ -662,9 +682,11 @@ local WORLD_NPC_NAMES = {
     "Rupert",
     "Saffron",
     "Sapphron",
+    "Scorch Basin Obelisk",
     "Sergei",
     "Shimmer Obelisk",
     "Sir Glade",
+    "Sky Obelisk",
     "Smiling Bag",
     "Sonion, Stylist",
     "Spear (Crypt)",
@@ -720,6 +742,8 @@ local InteractPromptEvent = Remotes:WaitForChild("InteractPromptEvent")
 local SellItemsEvent = Remotes:WaitForChild("SellItemsEvent")
 local MerchantSellMode = Remotes:WaitForChild("MerchantSellMode")
 local DialogEvent = Remotes:WaitForChild("DialogEvent")
+local RegisterNPCInteraction = Remotes:WaitForChild("RegisterNPCInteraction")
+local GetWaypointEvent = Remotes:WaitForChild("GetWaypointEvent")
 local CAST_WEAPONS = {
     ["Mourning Wake"] = true,
     ["Cursed Hammer"] = true,
@@ -1621,6 +1645,139 @@ local function TeleportToNearestQuestMarker()
     return false
 end
 
+local ALL_OBELISKS_DATA = {
+    { name = "Glade Obelisk", key = "Glade", pos = Vector3.new(-88.78, 191.45, -118.80) },
+    { name = "Sky Obelisk", key = "Sky", pos = Vector3.new(249.25, 1442.42, -264.18) },
+    { name = "Ironkeep Obelisk", key = "Ironkeep", pos = Vector3.new(914.52, 91.20, 1580.43) },
+    { name = "Crypt Obelisk", key = "Crypt", pos = Vector3.new(-1201.36, 37.43, -2016.86) },
+    { name = "Scorch Basin Obelisk", key = "Scorch", pos = Vector3.new(1334.74, -170.89, -476.77) },
+    { name = "Shimmer Obelisk", key = "Shimmer", pos = Vector3.new(-1344.20, 37.10, -284.30) },
+    { name = "Lone Obelisk", key = "Lone", pos = Vector3.new(-1752.94, 28.09, 856.05) },
+    { name = "Colosseum Obelisk", key = "Colosseum", pos = Vector3.new(2175.03, 12.58, 1227.04) },
+    { name = "Cyst Obelisk", key = "Cyst", pos = Vector3.new(1911.35, 37.11, 905.86) },
+    { name = "Pale Obelisk", key = "Pale", pos = Vector3.new(2605.02, 55.18, -98.68) },
+    { name = "Echohold Obelisk", key = "Echohold", pos = Vector3.new(-130.58, 32.07, -1511.73) },
+    { name = "Fissure Obelisk", key = "Fissure", pos = Vector3.new(2306.85, -32.35, -2107.13) },
+    { name = "Camp Zero Obelisk", key = "CampZero", pos = Vector3.new(2886.96, 37.20, -3043.29) },
+    { name = "Aetherglow Obelisk", key = "Aetherglow", pos = Vector3.new(-2518.50, 168.95, 1960.00) },
+}
+
+local IsUnlockingObelisks = false
+
+local function UnlockAllObelisks()
+    if IsUnlockingObelisks then
+        Library:Notify("Obelisk unlock routine is already in progress!", 3)
+        return
+    end
+
+    local hrp = GetRootPart()
+    if not hrp then
+        Library:Notify("Character not found.", 3)
+        return
+    end
+
+    IsUnlockingObelisks = true
+    Library:Notify("Starting Unlock All Obelisks (14 Obelisks)...", 4)
+
+    task.spawn(function()
+        local startCF = hrp.CFrame
+        local unlockedCount = 0
+
+        for i, obl in ipairs(ALL_OBELISKS_DATA) do
+            if not _G.__VeilHubRunning then break end
+
+            local curHrp = GetRootPart()
+            if not curHrp then break end
+
+            Library:Notify(string.format("[%d/14] Teleporting to %s...", i, obl.name), 2)
+
+            curHrp.AssemblyLinearVelocity = Vector3.zero
+            curHrp.AssemblyAngularVelocity = Vector3.zero
+            curHrp.CFrame = CFrame.new(obl.pos + Vector3.new(0, 3, 0))
+
+            local tempPlatform = Instance.new("Part")
+            tempPlatform.Name = "__ObeliskPlatform"
+            tempPlatform.Size = Vector3.new(16, 1, 16)
+            tempPlatform.CFrame = CFrame.new(obl.pos - Vector3.new(0, 0.5, 0))
+            tempPlatform.Anchored = true
+            tempPlatform.Transparency = 1
+            tempPlatform.CanCollide = true
+            tempPlatform.Parent = Workspace
+
+            pcall(function()
+                LocalPlayer:RequestStreamAroundAsync(obl.pos, 2)
+            end)
+
+            local npcsFolder = Workspace:FindFirstChild("NPCs")
+            local oblModel = nil
+            local tStart = tick()
+            while tick() - tStart < 1.2 do
+                if npcsFolder then
+                    oblModel = npcsFolder:FindFirstChild(obl.name)
+                    if oblModel then break end
+                end
+                task.wait(0.1)
+            end
+
+            if oblModel then
+                local dialogPart = oblModel:FindFirstChild("DialogPart") or oblModel.PrimaryPart or oblModel:FindFirstChildWhichIsA("BasePart")
+                if dialogPart and curHrp then
+                    curHrp.CFrame = dialogPart.CFrame + Vector3.new(0, 1.5, 0)
+                    curHrp.AssemblyLinearVelocity = Vector3.zero
+                end
+                task.wait(0.2)
+
+                if RegisterNPCInteraction then
+                    RegisterNPCInteraction:FireServer(obl.name)
+                end
+                if DialogEvent then
+                    DialogEvent:FireServer("start", oblModel, 1)
+                    DialogEvent:FireServer("option", oblModel, 2)
+                end
+                if GetWaypointEvent then
+                    GetWaypointEvent:FireServer(obl.key)
+                end
+                unlockedCount = unlockedCount + 1
+            else
+                if RegisterNPCInteraction then
+                    RegisterNPCInteraction:FireServer(obl.name)
+                end
+                if GetWaypointEvent then
+                    GetWaypointEvent:FireServer(obl.key)
+                end
+            end
+
+            task.wait(0.4)
+            if tempPlatform and tempPlatform.Parent then
+                tempPlatform:Destroy()
+            end
+        end
+
+        pcall(function()
+            if RegisterNPCInteraction then
+                RegisterNPCInteraction:FireServer("TheTwentyShelves")
+                RegisterNPCInteraction:FireServer("Manor")
+            end
+            if GetWaypointEvent then
+                GetWaypointEvent:FireServer("TheTwentyShelves")
+                GetWaypointEvent:FireServer("Manor")
+            end
+        end)
+
+        local finalHrp = GetRootPart()
+        if finalHrp and startCF then
+            finalHrp.AssemblyLinearVelocity = Vector3.zero
+            finalHrp.AssemblyAngularVelocity = Vector3.zero
+            finalHrp.CFrame = startCF
+        end
+
+        IsUnlockingObelisks = false
+        Library:Notify(string.format("Finished! Successfully reached and unlocked obelisks (%d/14). Returned to start position.", unlockedCount), 5)
+    end)
+end
+
+_G.__VeilHubUnlockAllObelisks = UnlockAllObelisks
+
 local Window = Library:CreateWindow({
     Title = "The Veil | Utility Hub",
     Footer = "Obsidian UI | Trello Datamine",
@@ -2113,7 +2270,18 @@ MoveRight:AddToggle("Noclip", {
     NoUI = false,
 })
 
-local TpLeft = Tabs.Teleports:AddLeftGroupbox("Quest Teleports")
+local TpLeft = Tabs.Teleports:AddLeftGroupbox("Waypoints & Quests")
+
+TpLeft:AddButton({
+    Text = "Unlock All Obelisk",
+    Func = function()
+        UnlockAllObelisks()
+    end,
+    DoubleClick = false,
+    Tooltip = "Automatically teleports to and unlocks all 14 Obelisk waypoints across the entire map",
+})
+
+TpLeft:AddDivider()
 
 TpLeft:AddButton({
     Text = "Teleport to Active Quest Objective",
@@ -2158,7 +2326,7 @@ TpLeft:AddButton({
     Tooltip = "Teleports player high into sky to avoid danger",
 })
 
-local TpRight = Tabs.Teleports:AddRightGroupbox("World NPCs and Locations (96)")
+local TpRight = Tabs.Teleports:AddRightGroupbox("World NPCs & Obelisks (" .. #WORLD_NPC_NAMES .. ")")
 
 TpRight:AddDropdown("TargetNPC", {
     Values = WORLD_NPC_NAMES,
@@ -2166,7 +2334,7 @@ TpRight:AddDropdown("TargetNPC", {
     Multi = false,
     Searchable = true,
     Text = "World NPC",
-    Tooltip = "Search and select any of the 96 world NPCs / Vendors / Obelisks",
+    Tooltip = "Search and select any world NPC / Vendor / Obelisk",
 })
 
 TpRight:AddButton({
