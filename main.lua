@@ -16,38 +16,154 @@ local DEFAULT_CONFIG = {
     AutoSellOnFull = false,
     ReturnAfterSell = true,
     SellByRarity = true,
-    SellByName = false,
-    SellMatchMode = "Match Any (Rarity OR Name)",
+    ProtectByName = true,
     SellRarities = {
         ["Common"] = true,
     },
-    SellItems = {
-        ["Old Amulet"] = true,
-        ["Old Ring"] = true,
-        ["Goblet"] = true,
-        ["Amulet"] = true,
-        ["Ring"] = true,
-        ["Aglet"] = true,
-        ["Ragged Cloth"] = true,
-        ["Thin Hide"] = true,
-        ["Rags"] = true,
-        ["Cowl"] = true,
-        ["Whoopie Cushion"] = true,
+    ProtectedItems = {
+        ["Muramasa"] = true,
+        ["Recall Potion"] = true,
+        ["Cloud In A Bottle"] = true,
+        ["Thornvine"] = true,
+        ["Sapphire"] = true,
+        ["Emerald"] = true,
+        ["Ruby"] = true,
+        ["Diamond"] = true,
     }
 }
 
-local COMMON_JUNK_TRINKETS = {
-    ["Old Amulet"] = true,
-    ["Old Ring"] = true,
-    ["Goblet"] = true,
-    ["Amulet"] = true,
-    ["Ring"] = true,
-    ["Aglet"] = true,
-    ["Ragged Cloth"] = true,
-    ["Thin Hide"] = true,
-    ["Rags"] = true,
-    ["Cowl"] = true,
-    ["Whoopie Cushion"] = true,
+local VALUABLE_TRELLO_ITEMS = {
+    "Accursed Robes",
+    "Arcane Rune",
+    "Armageddon",
+    "Auroran Lance",
+    "Biome Blade",
+    "Bladecrest Oathsword",
+    "Blessed Carapace",
+    "Blood Pact",
+    "Brain of Confusion",
+    "Breaker Blade",
+    "Brimlash",
+    "Broken Biome Blade",
+    "Burdenmail",
+    "Butcherer",
+    "Carnage",
+    "Chaos Stone",
+    "Cobalt Kunai",
+    "Collared Tunic",
+    "Crimson Cowl",
+    "Cursed Hammer",
+    "Cyst Worm",
+    "Dark Amulet",
+    "Deadlight",
+    "Deadweight",
+    "Desecrated Carapace",
+    "DPS Meter",
+    "Dread's Decree",
+    "Ebon Cloak",
+    "Elegy Of The Tides",
+    "Ember Cloak",
+    "Emberedge",
+    "Enchanted Sword",
+    "Enhancement Tome (Affinity III)",
+    "Enhancement Tome (Affinity IV)",
+    "Enhancement Tome (Affinity V)",
+    "Enhancement Tome (Haste II)",
+    "Enhancement Tome (Haste III)",
+    "Enhancement Tome (Longevity III)",
+    "Enhancement Tome (Luck I)",
+    "Enhancement Tome (Luck III)",
+    "Enhancement Tome (Mystic III)",
+    "Enhancement Tome (Mystic IV)",
+    "Enhancement Tome (Mystic V)",
+    "Enhancement Tome (Protection)",
+    "Enhancement Tome (Sharpness III)",
+    "Enhancement Tome (Sharpness IV)",
+    "Enhancement Tome (Sharpness V)",
+    "Evasion Scarf",
+    "Experimental Chemist",
+    "Extraterrestrial Transmitter",
+    "Fabled Crown",
+    "Festered Shield",
+    "Fire Tongue",
+    "Flare Bolt",
+    "Fork Of Doom",
+    "Frost Dancer",
+    "Furystone",
+    "Gem Crusher",
+    "Gladiator's Locket",
+    "Gloomhook",
+    "Goblin Scepter",
+    "Greatsword",
+    "Hellspiller",
+    "Hexed Wraithblade",
+    "Imp Staff",
+    "Infernal Plate",
+    "Inferno Fork",
+    "Influx Waver",
+    "Keblade",
+    "Lifeform Analyzer",
+    "Lucky Coin",
+    "Magma Stone",
+    "Malignant Bane",
+    "Melting Pot",
+    "Midnight Fractal",
+    "Mindbreaker",
+    "Mourning Wake",
+    "Mournmight",
+    "Nazar",
+    "Necronomical Scroll",
+    "Necronomical Skull",
+    "Night Weave",
+    "Nimbus Rod",
+    "Occult Skull Crown",
+    "Pale Vanguard",
+    "Philosopher's Stone",
+    "Pillarfall",
+    "Putrid Scent",
+    "Pygmy Necklace",
+    "Radar",
+    "Rage Pelt",
+    "Rover Drive",
+    "Sanctifying Luminousness",
+    "Sanguine Garb",
+    "Sanguine Vestments",
+    "Scourge Of Disease",
+    "Seraphim",
+    "Shadowbeam Staff",
+    "Shadowflame Knife",
+    "Shatterpoint",
+    "Shiny Stone",
+    "Shrouded Tanto",
+    "Silver Aegis",
+    "Sorcerer's Mantle",
+    "Soul Shroud",
+    "Soul Silencer",
+    "Sovereign",
+    "Staff Of The False Sun",
+    "Staff Of Voidmending",
+    "Storm Ruler",
+    "Suniron",
+    "Surgecloth",
+    "Suspicious Boulder",
+    "Testament's Edge",
+    "The Angry Mask",
+    "The Convergence",
+    "The Dice",
+    "The Laughing Mask",
+    "The Sleeping Mask",
+    "The Weeping Mask",
+    "The Weightless Crown",
+    "Tidal Anchor",
+    "Titan Glove",
+    "Tribal Visage",
+    "Unyielding Darkness",
+    "Venom Fang",
+    "Viperpoint",
+    "Voidlance",
+    "Weeping Sore",
+    "Witchlight",
+    "Withersting"
 }
 
 local TRELLO_ITEMS = {
@@ -87,7 +203,6 @@ local TRELLO_ITEMS = {
     "Catapult",
     "Chaos Stone",
     "Cloud In A Bottle",
-    "Cơ Chế Ép Cường Hóa (Rules & Formulas)",
     "Cobalt Kunai",
     "Collared Tunic",
     "Cowl",
@@ -479,36 +594,31 @@ local function PerformSellRoutine()
     end
 
     local allowedRarities = Options.SellRarities.Value or {}
-    local allowedItems = Options.SellItems.Value or {}
+    local protectedItems = Options.ProtectedItems.Value or {}
     local byRarity = Toggles.SellByRarity.Value
-    local byName = Toggles.SellByName.Value
-    local matchMode = Options.SellMatchMode.Value
+    local protectByName = Toggles.ProtectByName.Value
 
     local toolsToSell = {}
     for _, tool in ipairs(bp:GetChildren()) do
         if tool:IsA("Tool") and tool.Name ~= "Bag" then
             local sp = tool:FindFirstChild("SellPrice")
             if sp and sp.Value > 0 then
-                local rarityObj = tool:FindFirstChild("Rarity")
-                local rarity = rarityObj and rarityObj.Value or "Common"
-                local matchesRarity = allowedRarities[rarity] == true
-                local matchesName = allowedItems[tool.Name] == true
+                local isProtected = protectByName and (protectedItems[tool.Name] == true)
+                if not isProtected then
+                    local rarityObj = tool:FindFirstChild("Rarity")
+                    local rarity = rarityObj and rarityObj.Value or "Common"
+                    local matchesRarity = allowedRarities[rarity] == true
 
-                local shouldSell = false
-                if byRarity and byName then
-                    if matchMode == "Match Both (Rarity AND Name)" then
-                        shouldSell = matchesRarity and matchesName
+                    local shouldSell = false
+                    if byRarity then
+                        shouldSell = matchesRarity
                     else
-                        shouldSell = matchesRarity or matchesName
+                        shouldSell = true
                     end
-                elseif byRarity then
-                    shouldSell = matchesRarity
-                elseif byName then
-                    shouldSell = matchesName
-                end
 
-                if shouldSell then
-                    table.insert(toolsToSell, tool)
+                    if shouldSell then
+                        table.insert(toolsToSell, tool)
+                    end
                 end
             end
         end
@@ -765,6 +875,7 @@ FarmRight:AddDropdown("PickupRarities", {
     Text = "Target Rarities",
     Tooltip = "Select rarities to pick up",
 })
+Options.PickupRarities:SetValue(DEFAULT_CONFIG.PickupRarities)
 
 StatusLabel = FarmRight:AddLabel("Status: Idle", true)
 MapDropsLabel = FarmRight:AddLabel("Total Drops on Map: 0")
@@ -802,18 +913,10 @@ SellLeft:AddToggle("SellByRarity", {
     Tooltip = "Enables selling items that match selected rarities",
 })
 
-SellLeft:AddToggle("SellByName", {
-    Text = "Filter by Item Name",
-    Default = DEFAULT_CONFIG.SellByName,
-    Tooltip = "Enables selling items matching the specific Trello name list",
-})
-
-SellLeft:AddDropdown("SellMatchMode", {
-    Values = { "Match Any (Rarity OR Name)", "Match Both (Rarity AND Name)" },
-    Default = DEFAULT_CONFIG.SellMatchMode,
-    Multi = false,
-    Text = "Filter Mode",
-    Tooltip = "Choose whether both conditions or either condition applies",
+SellLeft:AddToggle("ProtectByName", {
+    Text = "Enable Blacklist Protection",
+    Default = DEFAULT_CONFIG.ProtectByName,
+    Tooltip = "Protects selected items so they are NEVER sold",
 })
 
 SellLeft:AddDropdown("SellRarities", {
@@ -823,11 +926,12 @@ SellLeft:AddDropdown("SellRarities", {
     Text = "Allowed Sell Rarities",
     Tooltip = "Select rarities to sell to merchant",
 })
+Options.SellRarities:SetValue(DEFAULT_CONFIG.SellRarities)
 
 SellLeft:AddDivider()
 
 SellLeft:AddButton({
-    Text = "Sell Filtered Items Now (Clement)",
+    Text = "Sell Items Now (Clement)",
     Func = function()
         PerformSellRoutine()
     end,
@@ -835,58 +939,66 @@ SellLeft:AddButton({
     Tooltip = "Immediately executes merchant selling run",
 })
 
-local SellRight = Tabs.Sell:AddRightGroupbox("Trello Item Filter")
+local SellRight = Tabs.Sell:AddRightGroupbox("Item Blacklist (Do Not Sell)")
 
-SellRight:AddDropdown("SellItems", {
+SellRight:AddDropdown("ProtectedItems", {
     Values = TRELLO_ITEMS,
-    Default = DEFAULT_CONFIG.SellItems,
+    Default = DEFAULT_CONFIG.ProtectedItems,
     Multi = true,
     Searchable = true,
-    Text = "Specific Items to Sell",
-    Tooltip = "Search and select items dumped from Trello",
+    Text = "Protected Items (Do Not Sell)",
+    Tooltip = "Search and select items you want to KEEP. They will never be sold.",
 })
+Options.ProtectedItems:SetValue(DEFAULT_CONFIG.ProtectedItems)
 
 SellRight:AddButton({
-    Text = "Quick Select Common Junk Trinkets",
-    Func = function()
-        Options.SellItems:SetValue(COMMON_JUNK_TRINKETS)
-        Library:Notify("Selected common junk trinkets!", 3)
-    end,
-    DoubleClick = false,
-    Tooltip = "Checks Old Amulet, Old Ring, Goblet, Amulet, Ring, etc.",
-})
-
-SellRight:AddButton({
-    Text = "Select Current Inventory Tools",
+    Text = "Protect Current Inventory Tools",
     Func = function()
         local bp = LocalPlayer:FindFirstChild("Backpack")
         if not bp then return end
-        local current = Options.SellItems.Value or {}
-        local added = 0
+        local current = Options.ProtectedItems.Value or {}
+        local count = 0
         for _, t in ipairs(bp:GetChildren()) do
             if t:IsA("Tool") and t.Name ~= "Bag" then
-                local sp = t:FindFirstChild("SellPrice")
-                if sp and sp.Value > 0 then
+                if not current[t.Name] then
                     current[t.Name] = true
-                    added = added + 1
+                    count = count + 1
                 end
             end
         end
-        Options.SellItems:SetValue(current)
-        Library:Notify(string.format("Selected %d inventory items!", added), 3)
+        Options.ProtectedItems:SetValue(current)
+        Library:Notify(string.format("Protected %d inventory tools from being sold!", count), 3)
     end,
     DoubleClick = false,
-    Tooltip = "Scans backpack and selects all sellable items",
+    Tooltip = "Scans backpack and marks all existing tools as protected",
 })
 
 SellRight:AddButton({
-    Text = "Clear Item Selection",
+    Text = "Protect All Rare / Elite / Legendary",
     Func = function()
-        Options.SellItems:SetValue({})
-        Library:Notify("Cleared item selection.", 2)
+        local current = Options.ProtectedItems.Value or {}
+        local count = 0
+        for _, item in ipairs(VALUABLE_TRELLO_ITEMS) do
+            if not current[item] then
+                current[item] = true
+                count = count + 1
+            end
+        end
+        Options.ProtectedItems:SetValue(current)
+        Library:Notify(string.format("Protected %d high-tier Trello items!", count), 3)
     end,
     DoubleClick = false,
-    Tooltip = "Unchecks all items in the list",
+    Tooltip = "Adds all Rare, Elite, Legendary, and Mythic catalog items to blacklist",
+})
+
+SellRight:AddButton({
+    Text = "Clear Blacklist",
+    Func = function()
+        Options.ProtectedItems:SetValue({})
+        Library:Notify("Cleared protected items blacklist.", 2)
+    end,
+    DoubleClick = false,
+    Tooltip = "Unchecks all items in the protected list",
 })
 
 local TpLeft = Tabs.Teleports:AddLeftGroupbox("Quest Teleports")

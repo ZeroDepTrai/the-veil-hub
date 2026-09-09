@@ -20,18 +20,16 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ZeroDepTrai/the-veil-
 - **Blacklist Unpickable Drops**: Automatically ignores items you already own (unique gear) or obstructed items so farming never halts.
 - **Return to Start**: Teleports you back to your starting spot when stopped.
 
-### 2. Auto-Sell System
-- **300 Trello Dumped Items**: Complete catalog of weapons, gear, and accessories from the official Trello datamine in a searchable dropdown.
-- **Multi-Rarity Filter**: Filter sales by rarity (`Common`, `Uncommon`, `Rare`, `Elite`, `Legendary`, `Mythic`).
-- **Flexible Match Modes**:
-  - `Match Any (Rarity OR Name)`
-  - `Match Both (Rarity AND Name)`
-- **One-Click Presets**:
-  - *Quick Select Common Junk Trinkets*: Selects `Old Amulet`, `Old Ring`, `Goblet`, `Amulet`, `Ring`, `Aglet`, `Ragged Cloth`, `Thin Hide`, `Rags`, `Cowl`, `Whoopie Cushion`.
-  - *Select Current Inventory Tools*: Scans backpack and auto-selects all items with valid `SellPrice`.
-  - *Clear Selection*: Clears selected items list.
-- **Auto-Sell on Full**: Automatically teleports to Clement, sells matching items, and resumes farming.
-- **Manual Sell Now Button**: Instantly triggers a sell transaction at Clement's stall.
+### 2. Auto-Sell & Item Blacklist (Protection List)
+- **Item Blacklist ("Do Not Sell")**: Items checked in the blacklist dropdown will **NEVER be sold**, preserving your weapons, potions, gems, and gear even when their rarity matches the sell filter.
+- **300 Trello Catalog Items**: Complete searchable catalog of weapons, gear, and accessories from the official Trello datamine.
+- **Multi-Rarity Sell Filter**: Choose which rarities to sell (`Common`, `Uncommon`, `Rare`, `Elite`, `Legendary`, `Mythic`).
+- **One-Click Protection Presets**:
+  - *Protect Current Inventory Tools*: Scans your backpack and adds all current gear/tools to the blacklist so they are never sold.
+  - *Protect All Rare / Elite / Legendary*: Instantly adds all high-tier weapons and items from the Trello catalog to the blacklist.
+  - *Clear Blacklist*: Resets all protected items.
+- **Auto-Sell on Full**: Automatically teleports to Merchant Clement when inventory reaches capacity ($\ge 148/150$), sells eligible items, and returns to farm.
+- **Manual Sell Now Button**: Instantly triggers a sell run at Clement's stall on demand.
 
 ### 3. World & Quest Teleports
 - **Active Quest Waypoint**: Teleports directly to the active objective marker (`QuestWaypointAnchor`).
