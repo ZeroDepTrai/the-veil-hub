@@ -7,12 +7,13 @@ local DEFAULT_CONFIG = {
     SelectedWeapons = {},
     EnableMobFarm = false,
     MobFarmKeybind = "H",
-    MobFarmDistance = 7,
     MobFarmHeight = -6,
     AutoAttackOnFarm = true,
     MobFarmCollectDrops = true,
     MobFarmReturnToStart = true,
-    TargetMobType = "All Mobs (Nearest)",
+    TargetMobType = {
+        ["All Mobs (Nearest)"] = true,
+    },
     IncludeDummies = false,
     MobFarmMaxRadius = 0,
     AutoPickup = false,
@@ -717,6 +718,8 @@ local LocalPlayer = Players.LocalPlayer
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local InteractPromptEvent = Remotes:WaitForChild("InteractPromptEvent")
 local SellItemsEvent = Remotes:WaitForChild("SellItemsEvent")
+local MerchantSellMode = Remotes:WaitForChild("MerchantSellMode")
+local DialogEvent = Remotes:WaitForChild("DialogEvent")
 local CAST_WEAPONS = {
     ["Mourning Wake"] = true,
     ["Cursed Hammer"] = true,
@@ -939,26 +942,190 @@ end
 
 local INITIAL_MOB_TYPES = {
     "All Mobs (Nearest)",
+    "Alien",
+    "Alien Engineer",
+    "Alien Gunner",
     "Ancient Bones",
+    "Angry Nimbus",
+    "Armored Skeleton",
     "Bloated Hiveling",
     "Blood Hiveling",
+    "Cambion",
+    "Clown",
     "Crowned Goblin",
+    "Cursed Hammer",
+    "Dissonant",
+    "Dissonant Brute",
+    "Enchanted Sword",
     "Explorer",
+    "Gigazapper",
     "Goblin",
     "Goblin Archer",
     "Goblin Sorcerer",
     "Goblin Thief",
+    "Goblin Tinkerer",
+    "Goblin Warlock",
     "Goblin Warrior",
     "Hiveling",
+    "Hiveling Brute",
+    "Hiveling Titan",
+    "Hivelingstein",
+    "Hungry",
+    "Imp",
+    "Martian Saucer",
+    "Minotaur",
+    "Necromancer",
     "Pillar Mimic",
+    "Probe",
     "Runner",
+    "Shrouded",
     "Skeleton",
+    "Smelter Demon",
+    "Starving Warrior",
+    "Stone Husk",
+    "The Angry Mask",
+    "The Beholder",
+    "The Cell Of Life",
+    "The Crowned Nothing",
+    "The Festering Wound",
+    "The Headless Behemoth",
+    "The Laughing Mask",
+    "The Puppeteer",
+    "The Sleeping Mask",
+    "The Stormcaller",
+    "The Unfinished",
+    "The Weeping Mask",
     "Training Dummy",
+    "Turret Golem",
+    "Twisted Fool",
+    "Wraith",
 }
+
+local MOB_ZONE_MAPPING = {
+    ["Hiveling"] = "ThePitSpawnZone",
+    ["Blood Hiveling"] = "ThePitSpawnZone",
+    ["Bloated Hiveling"] = "ThePitSpawnZone",
+    ["Hiveling Brute"] = "ThePitSpawnZone",
+    ["Hiveling Titan"] = "ThePitSpawnZone",
+    ["Hivelingstein"] = "ThePitSpawnZone",
+    ["Probe"] = "MurmurSpawnZone",
+    ["Alien"] = "MurmurSpawnZone",
+    ["Alien Engineer"] = "MurmurSpawnZone",
+    ["Alien Gunner"] = "MurmurSpawnZone",
+    ["Gigazapper"] = "MurmurSpawnZone",
+    ["Martian Saucer"] = "MurmurSpawnZone",
+    ["Smelter Demon"] = "MurmurSpawnZone",
+    ["Goblin"] = "RegularSpawnZone",
+    ["Goblin Archer"] = "RegularSpawnZone",
+    ["Goblin Thief"] = "RegularSpawnZone",
+    ["Goblin Warrior"] = "RegularSpawnZone",
+    ["Goblin Sorcerer"] = "RegularSpawnZone",
+    ["Goblin Warlock"] = "RegularSpawnZone",
+    ["Goblin Tinkerer"] = "RegularSpawnZone",
+    ["Crowned Goblin"] = "RegularSpawnZone",
+    ["Skeleton"] = "RegularSpawnZone",
+    ["Armored Skeleton"] = "RegularSpawnZone",
+    ["Ancient Bones"] = "RegularSpawnZone",
+    ["Imp"] = "RegularSpawnZone",
+    ["Pillar Mimic"] = "RegularSpawnZone",
+}
+
+local PRESET_SPAWN_COORDS = {
+    ["ThePitSpawnZone"] = {
+        Vector3.new(1279.0, -63.5, -438.0),
+        Vector3.new(1174.0, -63.5, -306.0),
+        Vector3.new(1112.0, -63.5, -570.0),
+        Vector3.new(1279.0, -63.5, -605.0),
+        Vector3.new(1077.0, -63.5, -473.0),
+    },
+    ["MurmurSpawnZone"] = {
+        Vector3.new(460.5, 62.5, -505.5),
+        Vector3.new(394.0, 62.5, -471.0),
+        Vector3.new(492.0, 62.5, -346.0),
+        Vector3.new(548.5, 62.5, -360.5),
+        Vector3.new(290.5, 37.0, -416.0),
+    },
+    ["RegularSpawnZone"] = {
+        Vector3.new(831.0, 115.5, -124.5),
+        Vector3.new(1279.0, 115.5, 406.5),
+        Vector3.new(1244.5, 115.5, 474.5),
+        Vector3.new(1176.5, 115.5, 576.5),
+        Vector3.new(0.5, 115.5, 1382.5),
+        Vector3.new(-1087.0, 115.5, 1382.5),
+        Vector3.new(1074.0, 115.5, -12.0),
+        Vector3.new(1209.0, 115.5, 753.0),
+        Vector3.new(1179.0, 115.5, 58.0),
+        Vector3.new(0.5, 115.5, -964.5),
+        Vector3.new(1102.0, 115.5, -1208.0),
+        Vector3.new(893.5, 115.5, -655.5),
+        Vector3.new(-1383.0, 115.5, -1007.8),
+        Vector3.new(-862.0, 115.5, -9.5),
+    },
+}
+
+local LastKnownMobPositions = {}
+
+local function GetMobSpawnLocation()
+    local selectedMobs = Options.TargetMobType and Options.TargetMobType.Value or {}
+    local hrp = GetRootPart()
+    local myPos = (hrp and hrp.Position) or Vector3.new(242, 186, 0)
+
+    for mobName, isSelected in pairs(selectedMobs) do
+        if isSelected and mobName ~= "All Mobs (Nearest)" and LastKnownMobPositions[mobName] then
+            return LastKnownMobPositions[mobName]
+        end
+    end
+
+    local zoneType = nil
+    for mobName, isSelected in pairs(selectedMobs) do
+        if isSelected and mobName ~= "All Mobs (Nearest)" and MOB_ZONE_MAPPING[mobName] then
+            zoneType = MOB_ZONE_MAPPING[mobName]
+            break
+        end
+    end
+    if not zoneType then
+        zoneType = "RegularSpawnZone"
+    end
+
+    local candidatePositions = {}
+    local zonesFolder = Workspace:FindFirstChild("EnemySpawnZones")
+    if zonesFolder then
+        for _, z in ipairs(zonesFolder:GetChildren()) do
+            if z.Name == zoneType then
+                table.insert(candidatePositions, z.Position)
+            end
+        end
+    end
+
+    if #candidatePositions == 0 and PRESET_SPAWN_COORDS[zoneType] then
+        for _, p in ipairs(PRESET_SPAWN_COORDS[zoneType]) do
+            table.insert(candidatePositions, p)
+        end
+    end
+
+    if #candidatePositions == 0 then
+        return Vector3.new(831.0, 115.5, -124.5)
+    end
+
+    local closestPos = candidatePositions[1]
+    local minD = (myPos - closestPos).Magnitude
+    for i = 2, #candidatePositions do
+        local d = (myPos - candidatePositions[i]).Magnitude
+        if d < minD then
+            minD = d
+            closestPos = candidatePositions[i]
+        end
+    end
+
+    return closestPos
+end
 
 local function ScanMapMobTypes()
     local monstersFolder = Workspace:FindFirstChild("Monsters")
-    local list = { "All Mobs (Nearest)" }
+    local list = {}
+    for _, n in ipairs(INITIAL_MOB_TYPES) do
+        table.insert(list, n)
+    end
     if monstersFolder then
         for _, m in ipairs(monstersFolder:GetChildren()) do
             if m:IsA("Model") and not table.find(list, m.Name) then
@@ -976,7 +1143,8 @@ local function GetNextMobTarget()
     local hrp = GetRootPart()
     if not hrp then return nil end
     local myPos = (InitialMobFarmCFrame and InitialMobFarmCFrame.Position) or hrp.Position
-    local targetType = Options.TargetMobType and Options.TargetMobType.Value or "All Mobs (Nearest)"
+    local selectedMobs = Options.TargetMobType and Options.TargetMobType.Value or {}
+    local isAllMobs = (selectedMobs["All Mobs (Nearest)"] == true) or (next(selectedMobs) == nil)
     local includeDummies = Toggles.IncludeDummies and Toggles.IncludeDummies.Value
     local maxRadius = Options.MobFarmMaxRadius and Options.MobFarmMaxRadius.Value or 0
 
@@ -988,9 +1156,23 @@ local function GetNextMobTarget()
             if includeDummies or m.Name ~= "Training Dummy" then
                 local hum = m:FindFirstChildOfClass("Humanoid")
                 if hum and hum.Health > 0 then
-                    local matchType = (targetType == "All Mobs (Nearest)") or (m.Name == targetType) or (string.find(m.Name, targetType, 1, true) ~= nil)
+                    local matchType = false
+                    if isAllMobs then
+                        matchType = true
+                    elseif selectedMobs[m.Name] == true then
+                        matchType = true
+                    else
+                        for name, isSel in pairs(selectedMobs) do
+                            if isSel and string.find(m.Name, name, 1, true) ~= nil then
+                                matchType = true
+                                break
+                            end
+                        end
+                    end
+
                     if matchType then
                         local mobPos = m:GetPivot().Position
+                        LastKnownMobPositions[m.Name] = mobPos
                         local d = (myPos - mobPos).Magnitude
                         if maxRadius == 0 or d <= maxRadius then
                             if d < bestDist then
@@ -1088,99 +1270,124 @@ local function FindMerchant()
     return nil
 end
 
+local LastSellTime = 0
 local function PerformSellRoutine()
-    if IsSelling then return false end
+    if IsSelling and (tick() - LastSellTime < 8) then return false end
     IsSelling = true
+    LastSellTime = tick()
 
-    local hrp = GetRootPart()
-    if not hrp then
-        IsSelling = false
-        return false
-    end
+    local success, result = pcall(function()
+        local hrp = GetRootPart()
+        if not hrp then return false end
 
-    local merchantPos = Vector3.new(242.5, 185.5, 1)
-    local merchant = FindMerchant()
-    if merchant then
-        merchantPos = merchant:GetPivot().Position
-    end
+        local merchant = FindMerchant()
+        local dp = merchant and (merchant:FindFirstChild("DialogPart") or merchant:FindFirstChild("Torso"))
+        local merchantPos = dp and dp.Position or Vector3.new(242.5, 188.5, 1)
 
-    local resumeCFrame = hrp.CFrame
+        local resumeCFrame = hrp.CFrame
 
-    SafeTeleport(merchantPos + Vector3.new(0, 0, 4))
-    task.wait(0.3)
+        SafeTeleport(merchantPos)
+        hrp.CFrame = CFrame.new(merchantPos)
+        task.wait(0.25)
 
-    local bp = LocalPlayer:FindFirstChild("Backpack")
-    if not bp then
-        IsSelling = false
-        return false
-    end
+        local bp = LocalPlayer:FindFirstChild("Backpack")
+        if not bp then return false end
 
-    local allowedRarities = Options.SellRarities.Value or {}
-    local protectedItems = Options.ProtectedItems.Value or {}
-    local byRarity = Toggles.SellByRarity.Value
-    local protectByName = Toggles.ProtectByName.Value
+        local allowedRarities = Options.SellRarities.Value or {}
+        local protectedItems = Options.ProtectedItems.Value or {}
+        local byRarity = Toggles.SellByRarity.Value
+        local protectByName = Toggles.ProtectByName.Value
 
-    local toolsToSell = {}
-    for _, tool in ipairs(bp:GetChildren()) do
-        if tool:IsA("Tool") and tool.Name ~= "Bag" then
-            local sp = tool:FindFirstChild("SellPrice")
-            if sp and sp.Value > 0 then
-                local isProtected = false
-                if protectByName then
-                    if protectedItems[tool.Name] == true then
-                        isProtected = true
-                    elseif (tool.Name == "Idol of Hatred" or tool.Name == "Totem of Hatred") and (protectedItems["Idol of Hatred"] or protectedItems["Totem of Hatred"]) then
-                        isProtected = true
-                    end
-                end
-
-                if not isProtected then
-                    local rarityObj = tool:FindFirstChild("Rarity")
-                    local rarity = rarityObj and rarityObj.Value or "Common"
-                    local matchesRarity = allowedRarities[rarity] == true
-
-                    local shouldSell = false
-                    if byRarity then
-                        shouldSell = matchesRarity
-                    else
-                        shouldSell = true
+        local toolsToSell = {}
+        for _, tool in ipairs(bp:GetChildren()) do
+            if tool:IsA("Tool") and tool.Name ~= "Bag" then
+                local sp = tool:FindFirstChild("SellPrice")
+                if sp and sp.Value > 0 then
+                    local isProtected = false
+                    if protectByName then
+                        if protectedItems[tool.Name] == true then
+                            isProtected = true
+                        elseif (tool.Name == "Idol of Hatred" or tool.Name == "Totem of Hatred") and (protectedItems["Idol of Hatred"] or protectedItems["Totem of Hatred"]) then
+                            isProtected = true
+                        end
                     end
 
-                    if shouldSell then
-                        table.insert(toolsToSell, tool)
+                    if not isProtected then
+                        local rarityObj = tool:FindFirstChild("Rarity")
+                        local rarity = rarityObj and rarityObj.Value or "Common"
+                        local matchesRarity = allowedRarities[rarity] == true
+
+                        local shouldSell = false
+                        if byRarity then
+                            shouldSell = matchesRarity
+                        else
+                            shouldSell = true
+                        end
+
+                        if shouldSell then
+                            table.insert(toolsToSell, tool)
+                        end
                     end
                 end
             end
         end
-    end
 
-    if #toolsToSell == 0 then
-        Library:Notify("No backpack items matched sell criteria.", 3)
+        if #toolsToSell == 0 then
+            Library:Notify("No backpack items matched sell criteria.", 3)
+            if Toggles.ReturnAfterSell.Value then
+                hrp.CFrame = resumeCFrame
+            end
+            return false
+        end
+
+        if not merchant then
+            merchant = FindMerchant()
+        end
+
+        local reg = Remotes:FindFirstChild("RegisterNPCInteraction")
+        if reg and merchant then
+            reg:FireServer(merchant.Name)
+            task.wait(0.15)
+        end
+
+        if DialogEvent and merchant then
+            DialogEvent:FireServer("start", merchant, 1)
+            task.wait(0.15)
+            DialogEvent:FireServer("option", merchant, 2)
+            task.wait(0.15)
+        end
+
+        if MerchantSellMode then
+            MerchantSellMode:Fire(true, merchant and merchant.Name or "Clement, Merchant")
+        end
+        task.wait(0.1)
+        SellItemsEvent:FireServer(toolsToSell)
+        task.wait(0.4)
+
+        if DialogEvent then
+            DialogEvent:FireServer("close")
+        end
+        if MerchantSellMode then
+            MerchantSellMode:Fire(false, nil)
+        end
+
+        Library:Notify(string.format("Successfully sold %d items at Clement!", #toolsToSell), 4)
+
         if Toggles.ReturnAfterSell.Value then
+            task.wait(0.15)
+            SafeTeleport(resumeCFrame.Position)
             hrp.CFrame = resumeCFrame
         end
-        IsSelling = false
-        return false
-    end
 
-    if not merchant then
-        merchant = FindMerchant()
-    end
-
-    MerchantSellMode:Fire(true, merchant)
-    task.wait(0.15)
-    SellItemsEvent:FireServer(toolsToSell)
-    task.wait(0.35)
-
-    Library:Notify(string.format("Successfully sold %d items at Clement!", #toolsToSell), 4)
-
-    if Toggles.ReturnAfterSell.Value then
-        task.wait(0.15)
-        SafeTeleport(resumeCFrame.Position)
-    end
+        return true
+    end)
 
     IsSelling = false
-    return true
+    if success then
+        return result
+    else
+        return false
+    end
 end
 
 local function VacuumNearbyDrops(centerPos, maxDist)
@@ -1456,28 +1663,18 @@ CombatRight:AddButton({
     Tooltip = "Unchecks all weapons",
 })
 
-local MobFarmLeft = Tabs.Combat:AddLeftGroupbox("Auto Mob Farm (Underground Back-Attach)")
+local MobFarmLeft = Tabs.Combat:AddLeftGroupbox("Auto Mob Farm (Underground)")
 
 MobFarmLeft:AddToggle("EnableMobFarm", {
     Text = "Enable Auto Mob Farm",
     Default = DEFAULT_CONFIG.EnableMobFarm,
-    Tooltip = "Attaches behind monsters underground with flight & noclip enabled, auto-farming them safely",
+    Tooltip = "Attaches directly beneath monsters underground with flight & noclip enabled, auto-farming them safely",
 }):AddKeyPicker("MobFarmKeybind", {
     Default = DEFAULT_CONFIG.MobFarmKeybind,
     SyncToggleState = true,
     Mode = "Toggle",
     Text = "Mob Farm Keybind",
     NoUI = false,
-})
-
-MobFarmLeft:AddSlider("MobFarmDistance", {
-    Text = "Distance Behind Mob",
-    Default = DEFAULT_CONFIG.MobFarmDistance,
-    Min = 3,
-    Max = 20,
-    Rounding = 0,
-    Suffix = " studs",
-    Tooltip = "Distance behind the monster back to hover",
 })
 
 MobFarmLeft:AddSlider("MobFarmHeight", {
@@ -1487,7 +1684,7 @@ MobFarmLeft:AddSlider("MobFarmHeight", {
     Max = 5,
     Rounding = 1,
     Suffix = " studs",
-    Tooltip = "Negative Y positions you underground so other players cannot see your name and mobs cannot hit you",
+    Tooltip = "Negative Y positions you straight beneath the mob underground so other players cannot see your name and mobs cannot hit you",
 })
 
 MobFarmLeft:AddToggle("AutoAttackOnFarm", {
@@ -1515,10 +1712,10 @@ local MobFarmRight = Tabs.Combat:AddRightGroupbox("Mob Farm Targets & Range")
 MobFarmRight:AddDropdown("TargetMobType", {
     Values = INITIAL_MOB_TYPES,
     Default = DEFAULT_CONFIG.TargetMobType,
-    Multi = false,
+    Multi = true,
     Searchable = true,
-    Text = "Target Monster Type",
-    Tooltip = "Choose which monster to farm, or select All Mobs to target anything nearest",
+    Text = "Target Monster Types",
+    Tooltip = "Choose monsters to farm (Multi-Select). If no monsters are alive, auto teleports to spawn zone to wait.",
 })
 
 MobFarmRight:AddButton({
@@ -1534,6 +1731,32 @@ MobFarmRight:AddButton({
     end,
     DoubleClick = false,
     Tooltip = "Scans Workspace.Monsters for all active monster species",
+})
+
+MobFarmRight:AddButton({
+    Text = "Select All Preset Mobs",
+    Func = function()
+        local newDict = {}
+        for _, name in ipairs(INITIAL_MOB_TYPES) do
+            if name ~= "All Mobs (Nearest)" and name ~= "Training Dummy" then
+                newDict[name] = true
+            end
+        end
+        Options.TargetMobType:SetValue(newDict)
+        Library:Notify("Selected all combat monsters!", 3)
+    end,
+    DoubleClick = false,
+    Tooltip = "Checks all farmable monsters in the multi-select dropdown",
+})
+
+MobFarmRight:AddButton({
+    Text = "Target All Mobs (Nearest)",
+    Func = function()
+        Options.TargetMobType:SetValue({ ["All Mobs (Nearest)"] = true })
+        Library:Notify("Reset to target nearest alive monster", 2)
+    end,
+    DoubleClick = false,
+    Tooltip = "Sets filter to target any monster nearest to you",
 })
 
 MobFarmRight:AddToggle("IncludeDummies", {
@@ -1957,6 +2180,7 @@ _G.VeilHub = {
     AttackWithWeapon = AttackWithWeapon,
     GetNextMobTarget = GetNextMobTarget,
     ScanMapMobTypes = ScanMapMobTypes,
+    GetMobSpawnLocation = GetMobSpawnLocation,
 }
 
 
@@ -2258,20 +2482,35 @@ task.spawn(function()
                     targetHum = target and target.Parent and target:FindFirstChildOfClass("Humanoid")
 
                     if not target then
-                        if MobFarmStatusLabel then MobFarmStatusLabel:SetText("Status: Searching for mobs...") end
-                        task.wait(0.5)
+                        local spawnPos = GetMobSpawnLocation()
+                        if spawnPos then
+                            local height = (Options.MobFarmHeight and Options.MobFarmHeight.Value) or -6
+                            local waitPos = spawnPos + Vector3.new(0, height, 0)
+                            SafeTeleport(waitPos)
+                            hrp.CFrame = CFrame.new(waitPos)
+                            hrp.AssemblyLinearVelocity = Vector3.zero
+                            hrp.AssemblyAngularVelocity = Vector3.zero
+                            if FlyBodyVelocity and FlyBodyVelocity.Parent == hrp then
+                                FlyBodyVelocity.Velocity = Vector3.zero
+                            end
+                            pcall(function()
+                                LocalPlayer:RequestStreamAroundAsync(spawnPos, 2)
+                            end)
+                            if MobFarmStatusLabel then MobFarmStatusLabel:SetText("Status: Waiting for mob respawn...") end
+                        else
+                            if MobFarmStatusLabel then MobFarmStatusLabel:SetText("Status: Searching for mobs...") end
+                        end
+                        task.wait(0.6)
                     end
                 end
 
                 if target and target.Parent and targetHum and targetHum.Health > 0 then
                     local piv = target:GetPivot()
                     local targetPos = piv.Position
-                    local targetLook = piv.LookVector
 
-                    local dist = (Options.MobFarmDistance and Options.MobFarmDistance.Value) or 7
                     local height = (Options.MobFarmHeight and Options.MobFarmHeight.Value) or -6
 
-                    local desiredPos = targetPos - (targetLook * dist) + Vector3.new(0, height, 0)
+                    local desiredPos = targetPos + Vector3.new(0, height, 0)
                     local desiredCF = CFrame.lookAt(desiredPos, targetPos)
 
                     hrp.CFrame = desiredCF
