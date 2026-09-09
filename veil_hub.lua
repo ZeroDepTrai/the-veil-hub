@@ -50,6 +50,15 @@ local DEFAULT_CONFIG = {
     FlyKeybind = "F",
     Noclip = false,
     NoclipKeybind = "N",
+    EnableESP = false,
+    ESPPlayers = true,
+    ESPNPCs = true,
+    ESPMobs = true,
+    ESPChests = true,
+    ESPShowHighlight = true,
+    ESPShowDistance = true,
+    ESPShowHealth = true,
+    ESPMaxDistance = 0,
 }
 
 local VALUABLE_TRELLO_ITEMS = {
@@ -836,10 +845,106 @@ local function StartFlying()
     end
 end
 
+local ESP_CONTAINER = Instance.new("Folder")
+ESP_CONTAINER.Name = "__VeilHubESP"
+pcall(function()
+    ESP_CONTAINER.Parent = LocalPlayer:WaitForChild("PlayerGui")
+end)
+
+local ESP_ENTITIES = {}
+local KNOWN_CHESTS = {}
+
+local COLOR_PLAYER = Color3.fromRGB(0, 200, 255)
+local COLOR_NPC = Color3.fromRGB(255, 215, 0)
+local COLOR_MOB = Color3.fromRGB(255, 60, 60)
+local COLOR_CHEST = Color3.fromRGB(50, 255, 120)
+
+local function RemoveESP(target)
+    local data = ESP_ENTITIES[target]
+    if data then
+        if data.Gui and data.Gui.Parent then
+            data.Gui:Destroy()
+        end
+        if data.Highlight and data.Highlight.Parent then
+            data.Highlight:Destroy()
+        end
+        ESP_ENTITIES[target] = nil
+    end
+end
+
+local function ClearAllESP()
+    for target, _ in pairs(ESP_ENTITIES) do
+        RemoveESP(target)
+    end
+end
+
+local function CreateOrGetESP(target, targetPart, kind, color, baseName)
+    local data = ESP_ENTITIES[target]
+    if data then
+        data.TargetPart = targetPart
+        data.BaseName = baseName
+        if data.Gui and data.Gui.Adornee ~= targetPart then
+            data.Gui.Adornee = targetPart
+        end
+        if data.Highlight and data.Highlight.Adornee ~= target then
+            data.Highlight.Adornee = target
+        end
+        return data
+    end
+
+    local bg = Instance.new("BillboardGui")
+    bg.Name = "__ESP_" .. tostring(target.Name)
+    bg.AlwaysOnTop = true
+    bg.Size = UDim2.new(0, 160, 0, 32)
+    bg.StudsOffset = Vector3.new(0, 2.5, 0)
+    bg.Adornee = targetPart
+    bg.Parent = ESP_CONTAINER
+
+    local txt = Instance.new("TextLabel")
+    txt.Size = UDim2.new(1, 0, 1, 0)
+    txt.BackgroundTransparency = 1
+    txt.Text = baseName
+    txt.TextColor3 = color
+    txt.TextStrokeTransparency = 0
+    txt.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    txt.Font = Enum.Font.SourceSansBold
+    txt.TextSize = 13
+    txt.RichText = true
+    txt.Parent = bg
+
+    local hl = Instance.new("Highlight")
+    hl.Name = "__HL_" .. tostring(target.Name)
+    hl.FillColor = color
+    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+    hl.FillTransparency = 0.65
+    hl.OutlineTransparency = 0
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.Adornee = target
+    hl.Enabled = false
+    hl.Parent = ESP_CONTAINER
+
+    data = {
+        Gui = bg,
+        Label = txt,
+        Highlight = hl,
+        Target = target,
+        TargetPart = targetPart,
+        Kind = kind,
+        Color = color,
+        BaseName = baseName,
+    }
+    ESP_ENTITIES[target] = data
+    return data
+end
+
 _G.__VeilHubLibrary = Library
 _G.__VeilHubUnload = function()
     _G.__VeilHubRunning = false
     StopFlying()
+    ClearAllESP()
+    if ESP_CONTAINER and ESP_CONTAINER.Parent then
+        ESP_CONTAINER:Destroy()
+    end
     local hum = GetHumanoid()
     if hum then
         hum.WalkSpeed = 17
@@ -1792,6 +1897,7 @@ local Tabs = {
     Sell = Window:AddTab("Auto Sell", "coins"),
     Movement = Window:AddTab("Movement", "zap"),
     Teleports = Window:AddTab("Teleports", "map-pin"),
+    Visuals = Window:AddTab("Visuals", "eye"),
     ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
 }
 
@@ -2362,6 +2468,69 @@ TpRight:AddButton({
     Tooltip = "Bypasses StreamingEnabled and teleports directly to NPC",
 })
 
+local VisLeft = Tabs.Visuals:AddLeftGroupbox("ESP Toggles")
+
+VisLeft:AddToggle("EnableESP", {
+    Text = "Enable Visual ESP",
+    Default = DEFAULT_CONFIG.EnableESP,
+    Tooltip = "Master toggle for in-game ESP visual overlays",
+})
+
+VisLeft:AddToggle("ESPPlayers", {
+    Text = "Player ESP",
+    Default = DEFAULT_CONFIG.ESPPlayers,
+    Tooltip = "Highlights other players with distance and health stats",
+})
+
+VisLeft:AddToggle("ESPNPCs", {
+    Text = "NPC & Obelisk ESP",
+    Default = DEFAULT_CONFIG.ESPNPCs,
+    Tooltip = "Highlights all world NPCs, vendors, and Obelisks",
+})
+
+VisLeft:AddToggle("ESPMobs", {
+    Text = "Monster / Mob ESP",
+    Default = DEFAULT_CONFIG.ESPMobs,
+    Tooltip = "Highlights active monsters with live HP bars",
+})
+
+VisLeft:AddToggle("ESPChests", {
+    Text = "Chest ESP",
+    Default = DEFAULT_CONFIG.ESPChests,
+    Tooltip = "Highlights treasure chests and loot containers",
+})
+
+local VisRight = Tabs.Visuals:AddRightGroupbox("ESP Settings")
+
+VisRight:AddToggle("ESPShowHighlight", {
+    Text = "Show Chams Highlight",
+    Default = DEFAULT_CONFIG.ESPShowHighlight,
+    Tooltip = "Renders full-body silhouette chams on models (closest 25)",
+})
+
+VisRight:AddToggle("ESPShowDistance", {
+    Text = "Show Distance",
+    Default = DEFAULT_CONFIG.ESPShowDistance,
+    Tooltip = "Displays distance in studs on billboard labels",
+})
+
+VisRight:AddToggle("ESPShowHealth", {
+    Text = "Show Health (Players & Mobs)",
+    Default = DEFAULT_CONFIG.ESPShowHealth,
+    Tooltip = "Displays numeric health on players and mobs",
+})
+
+VisRight:AddSlider("ESPMaxDistance", {
+    Text = "Max Render Distance",
+    Default = DEFAULT_CONFIG.ESPMaxDistance,
+    Min = 0,
+    Max = 5000,
+    Rounding = 0,
+    Compact = false,
+    Suffix = " studs",
+    Tooltip = "Filter out entities further than this distance (0 = Unlimited)",
+})
+
 local SettingsLeft = Tabs["UI Settings"]:AddLeftGroupbox("Menu")
 
 SettingsLeft:AddLabel("Menu Bind")
@@ -2903,6 +3072,200 @@ task.spawn(function()
             end
         end
         task.wait()
+    end
+end)
+
+local function RescanChests()
+    for _, d in ipairs(Workspace:GetDescendants()) do
+        if d:IsA("Model") and (d.Name == "Chest" or (d:FindFirstChild("Argument") and d.Argument.Value == "OpenChest")) then
+            if not table.find(KNOWN_CHESTS, d) then
+                table.insert(KNOWN_CHESTS, d)
+            end
+        end
+    end
+end
+
+local DescendantAddedConn = nil
+pcall(function()
+    DescendantAddedConn = Workspace.DescendantAdded:Connect(function(d)
+        if not _G.__VeilHubRunning then return end
+        if d:IsA("Model") and (d.Name == "Chest" or (d:FindFirstChild("Argument") and d.Argument.Value == "OpenChest")) then
+            if not table.find(KNOWN_CHESTS, d) then
+                table.insert(KNOWN_CHESTS, d)
+            end
+        end
+    end)
+end)
+
+task.spawn(function()
+    local lastChestScan = 0
+    while _G.__VeilHubRunning do
+        local isEspEnabled = Toggles.EnableESP and Toggles.EnableESP.Value
+
+        if not isEspEnabled then
+            if next(ESP_ENTITIES) ~= nil then
+                ClearAllESP()
+            end
+            task.wait(0.25)
+        else
+            if not ESP_CONTAINER or not ESP_CONTAINER.Parent then
+                ESP_CONTAINER = Instance.new("Folder")
+                ESP_CONTAINER.Name = "__VeilHubESP"
+                pcall(function()
+                    ESP_CONTAINER.Parent = LocalPlayer:WaitForChild("PlayerGui")
+                end)
+            end
+
+            local now = tick()
+            if now - lastChestScan >= 3 then
+                lastChestScan = now
+                pcall(RescanChests)
+            end
+
+            local hrp = GetRootPart()
+            local cam = Workspace.CurrentCamera
+            local myPos = (hrp and hrp.Position) or (cam and cam.CFrame.Position) or Vector3.zero
+            local maxDist = tonumber(Options.ESPMaxDistance and Options.ESPMaxDistance.Value) or 0
+            local showDist = Toggles.ESPShowDistance and Toggles.ESPShowDistance.Value
+            local showHp = Toggles.ESPShowHealth and Toggles.ESPShowHealth.Value
+            local showHL = Toggles.ESPShowHighlight and Toggles.ESPShowHighlight.Value
+
+            local activeTargets = {}
+
+            if Toggles.ESPPlayers and Toggles.ESPPlayers.Value then
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character.Parent then
+                        local char = p.Character
+                        local targetPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
+                        local hum = char:FindFirstChildOfClass("Humanoid")
+                        if targetPart and hum and hum.Health > 0 then
+                            activeTargets[char] = {
+                                target = char,
+                                part = targetPart,
+                                kind = "Player",
+                                color = COLOR_PLAYER,
+                                name = p.DisplayName or p.Name,
+                                hum = hum,
+                            }
+                        end
+                    end
+                end
+            end
+
+            if Toggles.ESPNPCs and Toggles.ESPNPCs.Value then
+                local npcsFolder = Workspace:FindFirstChild("NPCs")
+                if npcsFolder then
+                    for _, npc in ipairs(npcsFolder:GetChildren()) do
+                        if npc:IsA("Model") then
+                            local targetPart = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("DialogPart") or npc.PrimaryPart or npc:FindFirstChildWhichIsA("BasePart")
+                            if targetPart then
+                                activeTargets[npc] = {
+                                    target = npc,
+                                    part = targetPart,
+                                    kind = "NPC",
+                                    color = COLOR_NPC,
+                                    name = npc.Name,
+                                }
+                            end
+                        end
+                    end
+                end
+            end
+
+            if Toggles.ESPMobs and Toggles.ESPMobs.Value then
+                local monstersFolder = Workspace:FindFirstChild("Monsters")
+                if monstersFolder then
+                    for _, mob in ipairs(monstersFolder:GetChildren()) do
+                        if mob:IsA("Model") then
+                            local hum = mob:FindFirstChildOfClass("Humanoid")
+                            if hum and hum.Health > 0 then
+                                local targetPart = mob:FindFirstChild("HumanoidRootPart") or mob:FindFirstChild("Head") or mob.PrimaryPart or mob:FindFirstChildWhichIsA("BasePart")
+                                if targetPart then
+                                    activeTargets[mob] = {
+                                        target = mob,
+                                        part = targetPart,
+                                        kind = "Mob",
+                                        color = COLOR_MOB,
+                                        name = mob.Name,
+                                        hum = hum,
+                                    }
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            if Toggles.ESPChests and Toggles.ESPChests.Value then
+                local validChests = {}
+                for _, chest in ipairs(KNOWN_CHESTS) do
+                    if chest and chest.Parent then
+                        table.insert(validChests, chest)
+                        local targetPart = chest:FindFirstChild("Main") or chest.PrimaryPart or chest:FindFirstChildWhichIsA("BasePart")
+                        if targetPart then
+                            activeTargets[chest] = {
+                                target = chest,
+                                part = targetPart,
+                                kind = "Chest",
+                                color = COLOR_CHEST,
+                                name = "Chest",
+                            }
+                        end
+                    end
+                end
+                KNOWN_CHESTS = validChests
+            end
+
+            for target, _ in pairs(ESP_ENTITIES) do
+                if not activeTargets[target] or not target.Parent then
+                    RemoveESP(target)
+                end
+            end
+
+            local hlCandidates = {}
+
+            for target, info in pairs(activeTargets) do
+                local dist = (info.part.Position - myPos).Magnitude
+                if maxDist > 0 and dist > maxDist then
+                    if ESP_ENTITIES[target] then
+                        ESP_ENTITIES[target].Gui.Enabled = false
+                        ESP_ENTITIES[target].Highlight.Enabled = false
+                    end
+                else
+                    local esp = CreateOrGetESP(target, info.part, info.kind, info.color, info.name)
+                    esp.Gui.Enabled = true
+
+                    local textStr = string.format("<b>[%s] %s</b>", info.kind, info.name)
+                    local subLines = {}
+                    if showDist then
+                        table.insert(subLines, string.format("%.0fm", dist))
+                    end
+                    if showHp and info.hum then
+                        table.insert(subLines, string.format("[%.0f/%.0f HP]", info.hum.Health, info.hum.MaxHealth))
+                    end
+                    if #subLines > 0 then
+                        textStr = textStr .. "\n" .. table.concat(subLines, " ")
+                    end
+                    esp.Label.Text = textStr
+
+                    table.insert(hlCandidates, { hl = esp.Highlight, dist = dist })
+                end
+            end
+
+            table.sort(hlCandidates, function(a, b)
+                return a.dist < b.dist
+            end)
+
+            for i, cand in ipairs(hlCandidates) do
+                if showHL and i <= 25 then
+                    cand.hl.Enabled = true
+                else
+                    cand.hl.Enabled = false
+                end
+            end
+
+            task.wait(0.12)
+        end
     end
 end)
 
