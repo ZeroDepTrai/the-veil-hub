@@ -1,7 +1,8 @@
 local DEFAULT_CONFIG = {
     EnableFastAttack = false,
     FastAttackKeybind = "V",
-    FastAttackDelay = "0.35",
+    FastAttackDelay = "0.10",
+    MultiEquip = true,
     HoldToAttack = false,
     SelectedWeapons = {},
     AutoPickup = false,
@@ -706,8 +707,32 @@ local LocalPlayer = Players.LocalPlayer
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local InteractPromptEvent = Remotes:WaitForChild("InteractPromptEvent")
 local SellItemsEvent = Remotes:WaitForChild("SellItemsEvent")
-local MerchantSellMode = Remotes:WaitForChild("MerchantSellMode")
-local AimCFrame = require(ReplicatedStorage.Assets.Scripts.AimCFrame)
+local CAST_WEAPONS = {
+    ["Mourning Wake"] = true,
+    ["Cursed Hammer"] = true,
+    ["Deadlight"] = true,
+    ["Enchanted Sword"] = true,
+}
+
+local function IsRealWeapon(t)
+    if not (t and t:IsA("Tool") and t.Name ~= "Bag") then return false end
+    local isSword = t:FindFirstChild("IsSword")
+    if isSword and isSword:IsA("BoolValue") and isSword.Value == true then
+        return true
+    end
+    if t:FindFirstChild("IsCastWeapon") ~= nil or CAST_WEAPONS[t.Name] == true then
+        return true
+    end
+    return false
+end
+
+local function GetAimCFrame()
+    local cam = Workspace.CurrentCamera
+    if not cam then return CFrame.new() end
+    local mouseLoc = UserInputService:GetMouseLocation()
+    local ray = cam:ViewportPointToRay(mouseLoc.X, mouseLoc.Y)
+    return CFrame.lookAt(ray.Origin, ray.Origin + ray.Direction.Unit)
+end
 
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -782,6 +807,15 @@ _G.__VeilHubUnload = function()
     if hum then
         hum.WalkSpeed = 17
     end
+    local char = GetCharacter()
+    local bp = LocalPlayer:FindFirstChild("Backpack")
+    if char and bp then
+        for _, c in ipairs(char:GetChildren()) do
+            if c:IsA("Tool") and c.Name ~= "Bag" then
+                c.Parent = bp
+            end
+        end
+    end
     Library:Unload()
 end
 
@@ -805,10 +839,8 @@ local function ScanInventoryWeapons()
     local list = {}
 
     local function checkTool(t)
-        if t:IsA("Tool") and t.Name ~= "Bag" then
-            if not table.find(list, t.Name) then
-                table.insert(list, t.Name)
-            end
+        if IsRealWeapon(t) and not table.find(list, t.Name) then
+            table.insert(list, t.Name)
         end
     end
 
@@ -832,19 +864,11 @@ local function AttackWithWeapon(weapon)
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not hum or not weapon or not weapon.Parent then return end
 
-    if weapon.Parent ~= char then
-        hum:EquipTool(weapon)
-    end
-
     local remoteName = weapon:GetAttribute("ConsumableRemote")
     if remoteName then
         local remote = Remotes:FindFirstChild(remoteName)
         if remote and remote:IsA("RemoteEvent") then
-            local aimCF = CFrame.new()
-            pcall(function()
-                aimCF = AimCFrame.Get()
-            end)
-            remote:FireServer(weapon.Name, aimCF)
+            remote:FireServer(weapon.Name, GetAimCFrame())
         end
     end
 
@@ -862,40 +886,29 @@ local function GetSelectedWeapons()
     local selected = Options.SelectedWeapons and Options.SelectedWeapons.Value or {}
     local weapons = {}
 
-    for _, t in ipairs(char:GetChildren()) do
-        if t:IsA("Tool") and t.Name ~= "Bag" and selected[t.Name] == true then
-            if not table.find(weapons, t) then
+    local function isTargetWeapon(t)
+        if not IsRealWeapon(t) then return false end
+        if selected[t.Name] == true then return true end
+        if next(selected) == nil then return true end
+        return false
+    end
+
+    if char then
+        for _, t in ipairs(char:GetChildren()) do
+            if isTargetWeapon(t) and not table.find(weapons, t) then
                 table.insert(weapons, t)
             end
         end
     end
     for _, t in ipairs(bp:GetChildren()) do
-        if t:IsA("Tool") and t.Name ~= "Bag" and selected[t.Name] == true then
-            if not table.find(weapons, t) then
-                table.insert(weapons, t)
-            end
-        end
-    end
-
-    if #weapons == 0 then
-        for _, t in ipairs(char:GetChildren()) do
-            if t:IsA("Tool") and t.Name ~= "Bag" then
-                if not table.find(weapons, t) then
-                    table.insert(weapons, t)
-                end
-            end
-        end
-        for _, t in ipairs(bp:GetChildren()) do
-            if t:IsA("Tool") and t.Name ~= "Bag" then
-                if not table.find(weapons, t) then
-                    table.insert(weapons, t)
-                end
-            end
+        if isTargetWeapon(t) and not table.find(weapons, t) then
+            table.insert(weapons, t)
         end
     end
 
     return weapons
 end
+
 
 local function GetDropPosition(d)
     if not d then return nil end
@@ -1263,15 +1276,15 @@ local Tabs = {
 
 local initialInventoryWeapons = ScanInventoryWeapons()
 if #initialInventoryWeapons == 0 then
-    initialInventoryWeapons = { "Diamond Staff", "Emerald Staff", "Topaz Staff", "Muramasa", "Mindbreaker" }
+    initialInventoryWeapons = { "Diamond Staff", "Emerald Staff", "Topaz Staff", "Muramasa", "Mindbreaker", "Flint Cutlass", "Thick Point" }
 end
 
-local CombatLeft = Tabs.Combat:AddLeftGroupbox("Fast Attack / Auto Swap")
+local CombatLeft = Tabs.Combat:AddLeftGroupbox("Fast Attack / Combat Loop")
 
 CombatLeft:AddToggle("EnableFastAttack", {
-    Text = "Enable Fast Attack Swap",
+    Text = "Enable Fast Attack",
     Default = DEFAULT_CONFIG.EnableFastAttack,
-    Tooltip = "Continuously swaps and attacks with selected weapons",
+    Tooltip = "Attacks continuously with all selected weapons",
 }):AddKeyPicker("FastAttackKeybind", {
     Default = DEFAULT_CONFIG.FastAttackKeybind,
     SyncToggleState = true,
@@ -1280,47 +1293,53 @@ CombatLeft:AddToggle("EnableFastAttack", {
     NoUI = false,
 })
 
+CombatLeft:AddToggle("MultiEquip", {
+    Text = "Multi-Equip (Hold All Simultaneously)",
+    Default = DEFAULT_CONFIG.MultiEquip,
+    Tooltip = "Equips and holds all selected weapons simultaneously in character with zero swap delay",
+})
+
 CombatLeft:AddInput("FastAttackDelay", {
     Default = DEFAULT_CONFIG.FastAttackDelay,
     Numeric = false,
     Finished = false,
     Text = "Attack Delay (seconds)",
-    Tooltip = "Type speed delay like 0.001 or 0.35 between weapon swaps",
-    Placeholder = "e.g. 0.001 or 0.35",
+    Tooltip = "Type speed delay like 0.001 or 0.10 between attacks",
+    Placeholder = "e.g. 0.001 or 0.10",
 })
 
 CombatLeft:AddToggle("HoldToAttack", {
     Text = "Only Attack While Holding Click",
     Default = DEFAULT_CONFIG.HoldToAttack,
-    Tooltip = "Only executes fast attack rotation while holding Left Click",
+    Tooltip = "Only executes fast attack while holding Left Click",
 })
 
 CombatStatusLabel = CombatLeft:AddLabel("Status: Idle")
 
-local CombatRight = Tabs.Combat:AddRightGroupbox("Weapons to Swap")
+local CombatRight = Tabs.Combat:AddRightGroupbox("Inventory Weapons (Weapons Bag)")
 
 CombatRight:AddDropdown("SelectedWeapons", {
     Values = initialInventoryWeapons,
     Default = DEFAULT_CONFIG.SelectedWeapons,
     Multi = true,
     Searchable = true,
-    Text = "Weapons to Swap",
-    Tooltip = "Select all weapons to rotate between (swords, staffs, etc.)",
+    Text = "Weapons to Attack With",
+    Tooltip = "Select all weapons to rotate between (swords, staffs, cutlasses, etc.)",
 })
 
 CombatRight:AddButton({
-    Text = "Refresh Inventory Weapons",
+    Text = "Refresh Weapons from Bag",
     Func = function()
         local updated = ScanInventoryWeapons()
         if #updated > 0 then
             Options.SelectedWeapons:SetValues(updated)
-            Library:Notify(string.format("Found %d weapons in inventory!", #updated), 3)
+            Library:Notify(string.format("Found %d weapons in Weapons category!", #updated), 3)
         else
             Library:Notify("No weapons found in backpack.", 2)
         end
     end,
     DoubleClick = false,
-    Tooltip = "Scans backpack & character and updates weapon list",
+    Tooltip = "Scans backpack and character using game's Weapons catalog filter",
 })
 
 CombatRight:AddButton({
@@ -1712,6 +1731,15 @@ SettingsLeft:AddButton({
         if hum then
             hum.WalkSpeed = 17
         end
+        local char = GetCharacter()
+        local bp = LocalPlayer:FindFirstChild("Backpack")
+        if char and bp then
+            for _, c in ipairs(char:GetChildren()) do
+                if c:IsA("Tool") and c.Name ~= "Bag" then
+                    c.Parent = bp
+                end
+            end
+        end
         Library:Unload()
     end,
     DoubleClick = true,
@@ -1747,10 +1775,23 @@ _G.VeilHub = {
 Toggles.EnableFastAttack:OnChanged(function()
     if Toggles.EnableFastAttack.Value then
         if CombatStatusLabel then CombatStatusLabel:SetText("Status: Fast Attack Active") end
-        Library:Notify("Fast Attack Swap Enabled (Press V to toggle)", 2)
+        Library:Notify("Fast Attack Enabled", 2)
     else
         if CombatStatusLabel then CombatStatusLabel:SetText("Status: Idle") end
-        Library:Notify("Fast Attack Swap Disabled", 2)
+        Library:Notify("Fast Attack Disabled", 2)
+        local char = GetCharacter()
+        local bp = LocalPlayer:FindFirstChild("Backpack")
+        if char and bp then
+            local count = 0
+            for _, c in ipairs(char:GetChildren()) do
+                if c:IsA("Tool") and c.Name ~= "Bag" then
+                    count = count + 1
+                    if count > 1 then
+                        c.Parent = bp
+                    end
+                end
+            end
+        end
     end
 end)
 
@@ -1878,15 +1919,33 @@ task.spawn(function()
 
             if shouldAttack then
                 local weapons = GetSelectedWeapons()
-                if #weapons >= 2 then
+                local char = GetCharacter()
+                local bp = LocalPlayer:FindFirstChild("Backpack")
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+                if hum and #weapons >= 1 then
+                    local isMulti = Toggles.MultiEquip and Toggles.MultiEquip.Value
+
+                    if isMulti then
+                        for _, w in ipairs(weapons) do
+                            if w.Parent ~= char then
+                                w.Parent = char
+                            end
+                        end
+                    end
+
                     for _, weapon in ipairs(weapons) do
                         if not _G.__VeilHubRunning or not Toggles.EnableFastAttack.Value then break end
                         if Toggles.HoldToAttack and Toggles.HoldToAttack.Value and not UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then break end
 
+                        if not isMulti and weapon.Parent ~= char then
+                            hum:EquipTool(weapon)
+                        end
+
                         AttackWithWeapon(weapon)
 
-                        local rawDelay = Options.FastAttackDelay and Options.FastAttackDelay.Value or "0.35"
-                        local delayNum = tonumber(rawDelay) or 0.35
+                        local rawDelay = Options.FastAttackDelay and Options.FastAttackDelay.Value or "0.10"
+                        local delayNum = tonumber(rawDelay) or 0.10
                         if delayNum < 0 then delayNum = 0 end
                         if delayNum > 0 then
                             task.wait(delayNum)
