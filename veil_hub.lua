@@ -942,62 +942,33 @@ end
 
 local INITIAL_MOB_TYPES = {
     "All Mobs (Nearest)",
-    "Alien",
-    "Alien Engineer",
-    "Alien Gunner",
     "Ancient Bones",
-    "Angry Nimbus",
     "Armored Skeleton",
     "Bloated Hiveling",
     "Blood Hiveling",
-    "Cambion",
-    "Clown",
     "Crowned Goblin",
-    "Cursed Hammer",
-    "Dissonant",
-    "Dissonant Brute",
-    "Enchanted Sword",
-    "Explorer",
-    "Gigazapper",
     "Goblin",
     "Goblin Archer",
     "Goblin Sorcerer",
     "Goblin Thief",
-    "Goblin Tinkerer",
     "Goblin Warlock",
     "Goblin Warrior",
     "Hiveling",
     "Hiveling Brute",
     "Hiveling Titan",
     "Hivelingstein",
-    "Hungry",
-    "Imp",
-    "Martian Saucer",
-    "Minotaur",
     "Necromancer",
     "Pillar Mimic",
     "Probe",
     "Runner",
-    "Shrouded",
     "Skeleton",
-    "Smelter Demon",
-    "Starving Warrior",
-    "Stone Husk",
-    "The Angry Mask",
-    "The Beholder",
     "The Cell Of Life",
-    "The Crowned Nothing",
     "The Festering Wound",
-    "The Headless Behemoth",
-    "The Laughing Mask",
+    "The Masquerade",
     "The Puppeteer",
-    "The Sleeping Mask",
     "The Stormcaller",
-    "The Unfinished",
-    "The Weeping Mask",
     "Training Dummy",
     "Turret Golem",
-    "Twisted Fool",
     "Wraith",
 }
 
@@ -1008,42 +979,41 @@ local MOB_ZONE_MAPPING = {
     ["Hiveling Brute"] = "ThePitSpawnZone",
     ["Hiveling Titan"] = "ThePitSpawnZone",
     ["Hivelingstein"] = "ThePitSpawnZone",
+    ["The Festering Wound"] = "TheFesteringWoundArena",
     ["Probe"] = "MurmurSpawnZone",
-    ["Alien"] = "MurmurSpawnZone",
-    ["Alien Engineer"] = "MurmurSpawnZone",
-    ["Alien Gunner"] = "MurmurSpawnZone",
-    ["Gigazapper"] = "MurmurSpawnZone",
-    ["Martian Saucer"] = "MurmurSpawnZone",
-    ["Smelter Demon"] = "MurmurSpawnZone",
     ["Goblin"] = "RegularSpawnZone",
     ["Goblin Archer"] = "RegularSpawnZone",
     ["Goblin Thief"] = "RegularSpawnZone",
     ["Goblin Warrior"] = "RegularSpawnZone",
     ["Goblin Sorcerer"] = "RegularSpawnZone",
     ["Goblin Warlock"] = "RegularSpawnZone",
-    ["Goblin Tinkerer"] = "RegularSpawnZone",
     ["Crowned Goblin"] = "RegularSpawnZone",
     ["Skeleton"] = "RegularSpawnZone",
     ["Armored Skeleton"] = "RegularSpawnZone",
     ["Ancient Bones"] = "RegularSpawnZone",
-    ["Imp"] = "RegularSpawnZone",
+    ["Necromancer"] = "RegularSpawnZone",
+    ["Wraith"] = "RegularSpawnZone",
     ["Pillar Mimic"] = "RegularSpawnZone",
+    ["Turret Golem"] = "RegularSpawnZone",
+    ["Training Dummy"] = "TrainingDummySpawn",
+    ["Runner"] = "RunnerSpawn",
+    ["The Stormcaller"] = "SkyIslandArena",
+    ["The Cell Of Life"] = "CellOfLifeArena",
+    ["The Masquerade"] = "RegularSpawnZone",
+    ["The Puppeteer"] = "PuppeteerArena",
 }
 
 local PRESET_SPAWN_COORDS = {
     ["ThePitSpawnZone"] = {
-        Vector3.new(1279.0, -63.5, -438.0),
-        Vector3.new(1174.0, -63.5, -306.0),
-        Vector3.new(1112.0, -63.5, -570.0),
-        Vector3.new(1279.0, -63.5, -605.0),
         Vector3.new(1077.0, -63.5, -473.0),
+        Vector3.new(1112.0, -63.5, -570.0),
     },
     ["MurmurSpawnZone"] = {
         Vector3.new(460.5, 62.5, -505.5),
+        Vector3.new(290.5, 37.0, -416.0),
         Vector3.new(394.0, 62.5, -471.0),
         Vector3.new(492.0, 62.5, -346.0),
         Vector3.new(548.5, 62.5, -360.5),
-        Vector3.new(290.5, 37.0, -416.0),
     },
     ["RegularSpawnZone"] = {
         Vector3.new(831.0, 115.5, -124.5),
@@ -1054,16 +1024,34 @@ local PRESET_SPAWN_COORDS = {
         Vector3.new(-1087.0, 115.5, 1382.5),
         Vector3.new(1074.0, 115.5, -12.0),
         Vector3.new(1209.0, 115.5, 753.0),
-        Vector3.new(1179.0, 115.5, 58.0),
         Vector3.new(0.5, 115.5, -964.5),
         Vector3.new(1102.0, 115.5, -1208.0),
         Vector3.new(893.5, 115.5, -655.5),
         Vector3.new(-1383.0, 115.5, -1007.8),
         Vector3.new(-862.0, 115.5, -9.5),
     },
+    ["TrainingDummySpawn"] = {
+        Vector3.new(-317.2, 13.0, 112.7),
+    },
+    ["RunnerSpawn"] = {
+        Vector3.new(30.0, 13.5, -162.0),
+    },
+    ["SkyIslandArena"] = {
+        Vector3.new(7.0, 1253.5, -5.5),
+    },
+    ["CellOfLifeArena"] = {
+        Vector3.new(417.0, -780.0, -311.0),
+    },
+    ["TheFesteringWoundArena"] = {
+        Vector3.new(1339.5, -558.8, 382.0),
+    },
+    ["PuppeteerArena"] = {
+        Vector3.new(408.0, 52.5, 261.5),
+    },
 }
 
 local LastKnownMobPositions = {}
+local MobSpawnCycleIndex = 0
 
 local function GetMobSpawnLocation()
     local selectedMobs = Options.TargetMobType and Options.TargetMobType.Value or {}
@@ -1076,12 +1064,18 @@ local function GetMobSpawnLocation()
         end
     end
 
-    local zoneType = nil
+    local selectedList = {}
     for mobName, isSelected in pairs(selectedMobs) do
         if isSelected and mobName ~= "All Mobs (Nearest)" and MOB_ZONE_MAPPING[mobName] then
-            zoneType = MOB_ZONE_MAPPING[mobName]
-            break
+            table.insert(selectedList, mobName)
         end
+    end
+
+    local zoneType = nil
+    if #selectedList > 0 then
+        MobSpawnCycleIndex = (MobSpawnCycleIndex % #selectedList) + 1
+        local chosenMob = selectedList[MobSpawnCycleIndex]
+        zoneType = MOB_ZONE_MAPPING[chosenMob]
     end
     if not zoneType then
         zoneType = "RegularSpawnZone"
@@ -1107,33 +1101,39 @@ local function GetMobSpawnLocation()
         return Vector3.new(831.0, 115.5, -124.5)
     end
 
-    local closestPos = candidatePositions[1]
-    local minD = (myPos - closestPos).Magnitude
-    for i = 2, #candidatePositions do
-        local d = (myPos - candidatePositions[i]).Magnitude
-        if d < minD then
+    local chosenPos = candidatePositions[1]
+    local minD = math.huge
+    for _, p in ipairs(candidatePositions) do
+        local d = (myPos - p).Magnitude
+        if d > 120 and d < minD then
             minD = d
-            closestPos = candidatePositions[i]
+            chosenPos = p
         end
     end
+    if minD == math.huge then
+        chosenPos = candidatePositions[1]
+    end
 
-    return closestPos
+    return chosenPos
 end
 
 local function ScanMapMobTypes()
     local monstersFolder = Workspace:FindFirstChild("Monsters")
     local list = {}
     for _, n in ipairs(INITIAL_MOB_TYPES) do
-        table.insert(list, n)
+        if n ~= "All Mobs (Nearest)" then
+            table.insert(list, n)
+        end
     end
     if monstersFolder then
         for _, m in ipairs(monstersFolder:GetChildren()) do
-            if m:IsA("Model") and not table.find(list, m.Name) then
+            if m:IsA("Model") and m.Name ~= "All Mobs (Nearest)" and not table.find(list, m.Name) then
                 table.insert(list, m.Name)
             end
         end
     end
     table.sort(list)
+    table.insert(list, 1, "All Mobs (Nearest)")
     return list
 end
 
