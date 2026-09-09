@@ -12,7 +12,15 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ZeroDepTrai/the-veil-
 
 ## ⚡ Features
 
-### 1. Auto-Pickup Trinkets
+### 1. Combat (Fast Attack & Weapon Swap Rotation)
+- **Fast Weapon Swap Rotation**: Continuously swaps and fires/swings selected weapons in your inventory (Staffs, Swords, Daggers, Wands, etc.), bypassing individual weapon cooldowns.
+- **Custom Numeric Speed Input**: Type any custom delay (e.g. `0.001`, `0.05`, `0.35`) directly into the input box instead of dragging a slider.
+- **Inventory Weapons Dropdown**: Multi-select dropdown populated with all currently owned weapons in your backpack and character, including all swords and staves.
+- **One-Click Refresh & Select All**: Scans your backpack in real-time and selects all available weapons for instant rotation.
+- **Toggle & Keybind**: Default toggle keybind **`V`** (customizable in UI).
+- **Hold to Attack Mode**: Optional toggle to only execute fast attack rotation while holding Left Click.
+
+### 2. Auto-Pickup Trinkets
 - **Fast Teleport & Ground Snapping**: Snaps player 1.2 studs above ground drops, maintaining proximity $\le 10$ studs for server-side pickup approval.
 - **AoE Proximity Vacuum**: Sweeps up all drops within 14 studs at once without teleporting multiple times.
 - **Rarity Filter**: Select specific drop rarities to collect (`Common`, `Uncommon`, `Rare`, `Elite`, `Legendary`, `Mythic`).

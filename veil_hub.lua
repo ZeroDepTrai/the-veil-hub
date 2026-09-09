@@ -1,4 +1,9 @@
 local DEFAULT_CONFIG = {
+    EnableFastAttack = false,
+    FastAttackKeybind = "V",
+    FastAttackDelay = "0.35",
+    HoldToAttack = false,
+    SelectedWeapons = {},
     AutoPickup = false,
     PickupDelay = 0.10,
     PickupMaxRadius = 0,
@@ -702,6 +707,7 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local InteractPromptEvent = Remotes:WaitForChild("InteractPromptEvent")
 local SellItemsEvent = Remotes:WaitForChild("SellItemsEvent")
 local MerchantSellMode = Remotes:WaitForChild("MerchantSellMode")
+local AimCFrame = require(ReplicatedStorage.Assets.Scripts.AimCFrame)
 
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -791,6 +797,105 @@ local StatusLabel = nil
 local MapDropsLabel = nil
 local FilterMatchesLabel = nil
 local SessionPickedLabel = nil
+local CombatStatusLabel = nil
+
+local function ScanInventoryWeapons()
+    local char = GetCharacter()
+    local bp = LocalPlayer:FindFirstChild("Backpack")
+    local list = {}
+
+    local function checkTool(t)
+        if t:IsA("Tool") and t.Name ~= "Bag" then
+            if not table.find(list, t.Name) then
+                table.insert(list, t.Name)
+            end
+        end
+    end
+
+    if char then
+        for _, t in ipairs(char:GetChildren()) do
+            checkTool(t)
+        end
+    end
+    if bp then
+        for _, t in ipairs(bp:GetChildren()) do
+            checkTool(t)
+        end
+    end
+
+    table.sort(list)
+    return list
+end
+
+local function AttackWithWeapon(weapon)
+    local char = GetCharacter()
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hum or not weapon or not weapon.Parent then return end
+
+    if weapon.Parent ~= char then
+        hum:EquipTool(weapon)
+    end
+
+    local remoteName = weapon:GetAttribute("ConsumableRemote")
+    if remoteName then
+        local remote = Remotes:FindFirstChild(remoteName)
+        if remote and remote:IsA("RemoteEvent") then
+            local aimCF = CFrame.new()
+            pcall(function()
+                aimCF = AimCFrame.Get()
+            end)
+            remote:FireServer(weapon.Name, aimCF)
+        end
+    end
+
+    pcall(function()
+        weapon:Activate()
+    end)
+end
+
+local function GetSelectedWeapons()
+    local char = GetCharacter()
+    local bp = LocalPlayer:FindFirstChild("Backpack")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hum or not bp then return {} end
+
+    local selected = Options.SelectedWeapons and Options.SelectedWeapons.Value or {}
+    local weapons = {}
+
+    for _, t in ipairs(char:GetChildren()) do
+        if t:IsA("Tool") and t.Name ~= "Bag" and selected[t.Name] == true then
+            if not table.find(weapons, t) then
+                table.insert(weapons, t)
+            end
+        end
+    end
+    for _, t in ipairs(bp:GetChildren()) do
+        if t:IsA("Tool") and t.Name ~= "Bag" and selected[t.Name] == true then
+            if not table.find(weapons, t) then
+                table.insert(weapons, t)
+            end
+        end
+    end
+
+    if #weapons == 0 then
+        for _, t in ipairs(char:GetChildren()) do
+            if t:IsA("Tool") and t.Name ~= "Bag" then
+                if not table.find(weapons, t) then
+                    table.insert(weapons, t)
+                end
+            end
+        end
+        for _, t in ipairs(bp:GetChildren()) do
+            if t:IsA("Tool") and t.Name ~= "Bag" then
+                if not table.find(weapons, t) then
+                    table.insert(weapons, t)
+                end
+            end
+        end
+    end
+
+    return weapons
+end
 
 local function GetDropPosition(d)
     if not d then return nil end
@@ -1148,12 +1253,103 @@ local Window = Library:CreateWindow({
 })
 
 local Tabs = {
+    Combat = Window:AddTab("Combat", "swords"),
     Farm = Window:AddTab("Auto Pickup", "package"),
     Sell = Window:AddTab("Auto Sell", "coins"),
     Movement = Window:AddTab("Movement", "zap"),
     Teleports = Window:AddTab("Teleports", "map-pin"),
     ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
 }
+
+local initialInventoryWeapons = ScanInventoryWeapons()
+if #initialInventoryWeapons == 0 then
+    initialInventoryWeapons = { "Diamond Staff", "Emerald Staff", "Topaz Staff", "Muramasa", "Mindbreaker" }
+end
+
+local CombatLeft = Tabs.Combat:AddLeftGroupbox("Fast Attack / Auto Swap")
+
+CombatLeft:AddToggle("EnableFastAttack", {
+    Text = "Enable Fast Attack Swap",
+    Default = DEFAULT_CONFIG.EnableFastAttack,
+    Tooltip = "Continuously swaps and attacks with selected weapons",
+}):AddKeyPicker("FastAttackKeybind", {
+    Default = DEFAULT_CONFIG.FastAttackKeybind,
+    SyncToggleState = true,
+    Mode = "Toggle",
+    Text = "Fast Attack Keybind",
+    NoUI = false,
+})
+
+CombatLeft:AddInput("FastAttackDelay", {
+    Default = DEFAULT_CONFIG.FastAttackDelay,
+    Numeric = false,
+    Finished = false,
+    Text = "Attack Delay (seconds)",
+    Tooltip = "Type speed delay like 0.001 or 0.35 between weapon swaps",
+    Placeholder = "e.g. 0.001 or 0.35",
+})
+
+CombatLeft:AddToggle("HoldToAttack", {
+    Text = "Only Attack While Holding Click",
+    Default = DEFAULT_CONFIG.HoldToAttack,
+    Tooltip = "Only executes fast attack rotation while holding Left Click",
+})
+
+CombatStatusLabel = CombatLeft:AddLabel("Status: Idle")
+
+local CombatRight = Tabs.Combat:AddRightGroupbox("Weapons to Swap")
+
+CombatRight:AddDropdown("SelectedWeapons", {
+    Values = initialInventoryWeapons,
+    Default = DEFAULT_CONFIG.SelectedWeapons,
+    Multi = true,
+    Searchable = true,
+    Text = "Weapons to Swap",
+    Tooltip = "Select all weapons to rotate between (swords, staffs, etc.)",
+})
+
+CombatRight:AddButton({
+    Text = "Refresh Inventory Weapons",
+    Func = function()
+        local updated = ScanInventoryWeapons()
+        if #updated > 0 then
+            Options.SelectedWeapons:SetValues(updated)
+            Library:Notify(string.format("Found %d weapons in inventory!", #updated), 3)
+        else
+            Library:Notify("No weapons found in backpack.", 2)
+        end
+    end,
+    DoubleClick = false,
+    Tooltip = "Scans backpack & character and updates weapon list",
+})
+
+CombatRight:AddButton({
+    Text = "Select All Inventory Weapons",
+    Func = function()
+        local updated = ScanInventoryWeapons()
+        local newDict = {}
+        for _, name in ipairs(updated) do
+            newDict[name] = true
+        end
+        if #updated > 0 then
+            Options.SelectedWeapons:SetValues(updated)
+            Options.SelectedWeapons:SetValue(newDict)
+            Library:Notify(string.format("Selected all %d inventory weapons!", #updated), 3)
+        end
+    end,
+    DoubleClick = false,
+    Tooltip = "Selects every weapon in your inventory for swap rotation",
+})
+
+CombatRight:AddButton({
+    Text = "Clear Selected Weapons",
+    Func = function()
+        Options.SelectedWeapons:SetValue({})
+        Library:Notify("Cleared weapon selection.", 2)
+    end,
+    DoubleClick = false,
+    Tooltip = "Unchecks all weapons",
+})
 
 local FarmLeft = Tabs.Farm:AddLeftGroupbox("Trinket Farm")
 
@@ -1526,7 +1722,7 @@ ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
 
 SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+SaveManager:SetIgnoreIndexes({ "MenuKeybind", "FastAttackKeybind", "WalkSpeedKeybind", "FlyKeybind", "NoclipKeybind" })
 
 ThemeManager:SetFolder("TheVeilHub")
 SaveManager:SetFolder("TheVeilHub/game")
@@ -1545,7 +1741,18 @@ _G.VeilHub = {
     StreamEntireMap = StreamEntireMap,
     StartFlying = StartFlying,
     StopFlying = StopFlying,
+    AttackWithWeapon = AttackWithWeapon,
 }
+
+Toggles.EnableFastAttack:OnChanged(function()
+    if Toggles.EnableFastAttack.Value then
+        if CombatStatusLabel then CombatStatusLabel:SetText("Status: Fast Attack Active") end
+        Library:Notify("Fast Attack Swap Enabled (Press V to toggle)", 2)
+    else
+        if CombatStatusLabel then CombatStatusLabel:SetText("Status: Idle") end
+        Library:Notify("Fast Attack Swap Disabled", 2)
+    end
+end)
 
 Toggles.AutoPickup:OnChanged(function()
     if Toggles.AutoPickup.Value then
@@ -1657,6 +1864,44 @@ RunService.Heartbeat:Connect(function()
             if hum.WalkSpeed ~= targetSpeed then
                 hum.WalkSpeed = targetSpeed
             end
+        end
+    end
+end)
+
+task.spawn(function()
+    while _G.__VeilHubRunning do
+        if Toggles.EnableFastAttack and Toggles.EnableFastAttack.Value then
+            local shouldAttack = true
+            if Toggles.HoldToAttack and Toggles.HoldToAttack.Value then
+                shouldAttack = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+            end
+
+            if shouldAttack then
+                local weapons = GetSelectedWeapons()
+                if #weapons >= 2 then
+                    for _, weapon in ipairs(weapons) do
+                        if not _G.__VeilHubRunning or not Toggles.EnableFastAttack.Value then break end
+                        if Toggles.HoldToAttack and Toggles.HoldToAttack.Value and not UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then break end
+
+                        AttackWithWeapon(weapon)
+
+                        local rawDelay = Options.FastAttackDelay and Options.FastAttackDelay.Value or "0.35"
+                        local delayNum = tonumber(rawDelay) or 0.35
+                        if delayNum < 0 then delayNum = 0 end
+                        if delayNum > 0 then
+                            task.wait(delayNum)
+                        else
+                            task.wait()
+                        end
+                    end
+                else
+                    task.wait(0.2)
+                end
+            else
+                task.wait(0.05)
+            end
+        else
+            task.wait(0.1)
         end
     end
 end)
