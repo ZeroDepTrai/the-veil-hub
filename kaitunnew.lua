@@ -1,4 +1,5 @@
 
+
 local env = type(getgenv) == "function" and getgenv() or _G
 local cfg = type(env.cfg) == "table" and env.cfg or {}
 cfg.AntiAFK = cfg.AntiAFK == nil or cfg.AntiAFK == true
@@ -51,6 +52,73 @@ local file, sessionReady, idle
 local spots, points = {}, {}
 local currentMatchData = nil
 
+local autoRejoining = false
+local function triggerAutoRejoin(reason)
+	if autoRejoining then
+		return
+	end
+	autoRejoining = true
+	local reasonStr = tostring(reason or "Disconnect/Kick/Error")
+	print("[Bocchi Kaitun] Auto Rejoin triggered: " .. reasonStr)
+	pcall(function()
+		if type(status) == "function" then
+			status("Disconnected (" .. reasonStr .. "); Auto Rejoining...")
+		end
+	end)
+	local qot = (type(syn) == "table" and syn.queue_on_teleport) or queue_on_teleport
+	if type(qot) == "function" then
+		pcall(qot, 'pcall(function() loadstring(readfile("kaitunnew.lua"))() end)')
+	end
+	task.spawn(function()
+		while true do
+			task.wait(2)
+			pcall(function()
+				local player = LP or game:GetService("Players").LocalPlayer
+				local targetPlace = (settings and settings.LOBBY_PLACE_ID) or 8304191830
+				TP:Teleport(targetPlace, player)
+			end)
+			task.wait(4)
+		end
+	end)
+end
+
+local function setupAutoRejoin()
+	local gs = game:GetService("GuiService")
+	pcall(function()
+		gs.ErrorMessageChanged:Connect(function(msg)
+			if type(msg) == "string" and #msg > 0 then
+				triggerAutoRejoin(msg)
+			end
+		end)
+	end)
+	pcall(function()
+		local cg = game:GetService("CoreGui")
+		local rpg = cg:FindFirstChild("RobloxPromptGui") or cg:WaitForChild("RobloxPromptGui", 5)
+		local promptOverlay = rpg and (rpg:FindFirstChild("promptOverlay") or rpg:WaitForChild("promptOverlay", 5))
+		if promptOverlay then
+			local function checkPrompt(child)
+				if not child then
+					return
+				end
+				local name = child.Name:lower()
+				if name:find("error") or child:FindFirstChild("ErrorTitle") or child:FindFirstChild("MessageArea") then
+					triggerAutoRejoin(child.Name)
+				end
+			end
+			promptOverlay.ChildAdded:Connect(checkPrompt)
+			for _, child in ipairs(promptOverlay:GetChildren()) do
+				checkPrompt(child)
+			end
+		end
+	end)
+	pcall(function()
+		TP.TeleportInitFailed:Connect(function(_, res, err)
+			triggerAutoRejoin(tostring(err or res or "TeleportInitFailed"))
+		end)
+	end)
+end
+setupAutoRejoin()
+
 local function parseCFrame(str)
 	local n = {}
 	for num in string.gmatch(str, "[%-%d%.]+") do
@@ -79,29 +147,25 @@ local INFINITE_NAMEK_STRAT = {
 	{ step = 12, money = 350, unit = "ichigo", cf = parseCFrame("-2938.62012, 91.8062057, -692.833374, 1, 0, -0, -0, 1, -0, 0, 0, 1") },
 }
 
-local boost = { old = setmetatable({}, { __mode = "k" }), cons = {} }
-
-function boost.write(obj, key, value)
-	pcall(function()
-		local old = boost.old
-		old[obj] = old[obj] or {}
-		if not old[obj][key] then
-			old[obj][key] = { value = obj[key] }
-		end
-		obj[key] = value
-	end)
-end
+local boost = { on = false, cons = {} }
 
 function boost.apply(obj)
+	if not obj then
+		return
+	end
 	if obj:IsA("BasePart") then
-		boost.write(obj, "CastShadow", false)
-		boost.write(obj, "Material", Enum.Material.SmoothPlastic)
-		boost.write(obj, "Reflectance", 0)
-		if obj:IsA("MeshPart") then
-			boost.write(obj, "RenderFidelity", Enum.RenderFidelity.Performance)
-		end
+		pcall(function()
+			obj.CastShadow = false
+			obj.Material = Enum.Material.SmoothPlastic
+			obj.Reflectance = 0
+			if obj:IsA("MeshPart") then
+				obj.RenderFidelity = Enum.RenderFidelity.Performance
+			end
+		end)
 	elseif obj:IsA("Decal") or obj:IsA("Texture") then
-		boost.write(obj, "Transparency", 1)
+		pcall(function()
+			obj.Transparency = 1
+		end)
 	elseif
 		obj:IsA("ParticleEmitter")
 		or obj:IsA("Trail")
@@ -112,17 +176,27 @@ function boost.apply(obj)
 		or obj:IsA("PostEffect")
 		or obj:IsA("Clouds")
 	then
-		boost.write(obj, "Enabled", false)
+		pcall(function()
+			obj.Enabled = false
+		end)
 	elseif obj:IsA("ForceField") then
-		boost.write(obj, "Visible", false)
+		pcall(function()
+			obj.Visible = false
+		end)
 	elseif obj:IsA("Sound") then
-		boost.write(obj, "Volume", 0)
+		pcall(function()
+			obj.Volume = 0
+		end)
 	elseif obj:IsA("Sky") then
-		boost.write(obj, "Parent", nil)
+		pcall(function()
+			obj.Parent = nil
+		end)
 	elseif obj:IsA("Terrain") then
-		boost.write(obj, "WaterWaveSize", 0)
-		boost.write(obj, "WaterWaveSpeed", 0)
-		boost.write(obj, "WaterReflectance", 0)
+		pcall(function()
+			obj.WaterWaveSize = 0
+			obj.WaterWaveSpeed = 0
+			obj.WaterReflectance = 0
+		end)
 	end
 end
 
@@ -132,46 +206,52 @@ function boost.set(on)
 	end
 	boost.on = on
 	for _, con in ipairs(boost.cons) do
-		con:Disconnect()
+		pcall(function()
+			con:Disconnect()
+		end)
 	end
 	table.clear(boost.cons)
 	if not on then
-		for obj, props in pairs(boost.old) do
-			for key, row in pairs(props) do
-				pcall(function()
-					obj[key] = row.value
-				end)
-			end
-		end
-		table.clear(boost.old)
 		return
 	end
 	local light = game:GetService("Lighting")
-	boost.write(light, "GlobalShadows", false)
-	boost.write(light, "Brightness", 0.5)
-	boost.write(light, "OutdoorAmbient", Color3.fromRGB(127, 127, 127))
-	boost.write(light, "Ambient", Color3.fromRGB(100, 100, 100))
-	boost.write(light, "FogEnd", 9e9)
 	pcall(function()
-		boost.write(
-			UserSettings():GetService("UserGameSettings"),
-			"SavedQualityLevel",
-			Enum.SavedQualitySetting.QualityLevel1
-		)
+		light.GlobalShadows = false
+		light.Brightness = 0.5
+		light.OutdoorAmbient = Color3.fromRGB(127, 127, 127)
+		light.Ambient = Color3.fromRGB(100, 100, 100)
+		light.FogEnd = 9e9
 	end)
-	for _, root in ipairs({ workspace, light }) do
-		table.insert(
-			boost.cons,
-			root.DescendantAdded:Connect(function(obj)
-				if boost.on then
-					boost.apply(obj)
-				end
-			end)
-		)
-		for _, obj in ipairs(root:GetDescendants()) do
+	pcall(function()
+		UserSettings():GetService("UserGameSettings").SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1
+	end)
+	table.insert(
+		boost.cons,
+		workspace.DescendantAdded:Connect(function(obj)
+			if boost.on then
+				boost.apply(obj)
+			end
+		end)
+	)
+	task.spawn(function()
+		local count = 0
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if not boost.on then
+				break
+			end
+			boost.apply(obj)
+			count = count + 1
+			if count % 150 == 0 then
+				task.wait()
+			end
+		end
+		for _, obj in ipairs(light:GetDescendants()) do
+			if not boost.on then
+				break
+			end
 			boost.apply(obj)
 		end
-	end
+	end)
 end
 
 local function validSession(data)
@@ -267,6 +347,20 @@ local function saveSession()
 	assert(readfile(file) == text, "Kaitun session could not be saved.")
 end
 
+local function clearStaleSummonPending()
+	if progress and progress.SummonPending then
+		local job = progress.SummonJob
+		local at = tonumber(progress.SummonAt) or 0
+		if job ~= game.JobId or at == 0 or (os.time() - at > 30) then
+			progress.SummonPending, progress.SummonSeen = nil, nil
+			progress.SummonAt, progress.SummonJob, progress.SummonGems = nil, nil, nil
+			if sessionReady then
+				saveSession()
+			end
+		end
+	end
+end
+
 local function loadSession()
 	sessionReady = false
 	assert(
@@ -303,6 +397,7 @@ local function loadSession()
 	elseif progress.UserId and progress.UserId ~= LP.UserId then
 		progress = { Losses = {}, FarmLeft = 0 }
 	end
+	clearStaleSummonPending()
 	env.BocchiKaitunProgress = progress
 	sessionReady = true
 	saveSession()
@@ -405,7 +500,7 @@ function loot.sample()
 	run.last = current
 end
 
-local function webhook(text)
+local function webhook(text, pingUser, customTitle)
 	if not cfg.Webhook.Enabled then
 		return
 	end
@@ -522,6 +617,9 @@ local function webhook(text)
 				fields,
 				{ name = "Player Stats", value = block(table.concat(totals, "\n")), inline = match }
 			)
+			local shouldPing = pingUser == true and user ~= ""
+			local embedTitle = customTitle or "Anime Adventures"
+			local embedColor = pingUser and 0x2ECC71 or 0x153E75
 			local response = send({
 				Url = url,
 				Method = "POST",
@@ -529,12 +627,12 @@ local function webhook(text)
 				Headers = { ["Content-Type"] = "application/json" },
 				Body = Http:JSONEncode({
 					username = "bocchi reworked.",
-					content = user ~= "" and ("<@" .. user .. ">") or "",
-					allowed_mentions = { parse = {}, users = user ~= "" and { user } or {} },
+					content = shouldPing and ("<@" .. user .. ">") or "",
+					allowed_mentions = shouldPing and { parse = {}, users = { user } } or { parse = {}, users = {} },
 					embeds = {
 						{
-							title = "Anime Adventures",
-							color = 0x153E75,
+							title = embedTitle,
+							color = embedColor,
 							description = "||" .. LP.Name .. "||",
 							fields = fields,
 							footer = { text = "bocchi reworked." },
@@ -695,6 +793,15 @@ local function owned()
 	return inv.session.collection.collection_profile_data.owned_units
 end
 
+local function ownsUnit(unitId)
+	for _, unit in pairs(owned()) do
+		if unit.unit_id == unitId then
+			return true
+		end
+	end
+	return false
+end
+
 local function equipped(cap)
 	cap = cap or 6
 	local profile = inv.session.collection.collection_profile_data
@@ -838,7 +945,7 @@ local function needsRoll(lv)
 
 	if isStoryDone or progress.FarmLevel or progress.FarmInfinite then
 		if not hasMacroUnits() then
-			local bCost = 50
+			local bCost = 500
 			local balance = val(LP:FindFirstChild("_stats"), "gem_amount", 0)
 			return type(balance) == "number" and balance >= bCost
 		end
@@ -931,14 +1038,51 @@ local function claimLevelMilestones()
 	local prof = inv and inv.session and inv.session.profile_data
 	local claimed = prof and prof.level_rewards_claimed or {}
 	for _, entry in pairs(rewardsData) do
-		if type(entry) == "table" and type(entry.level) == "number" then
-			local reqLv = entry.level
-			if curLv >= reqLv and not claimed[reqLv] and not claimed[tostring(reqLv)] then
+		local reqLv = type(entry) == "table" and tonumber(entry.level)
+		if reqLv then
+			local reqStr = tostring(reqLv)
+			if curLv >= reqLv and not claimed[reqLv] and not claimed[reqStr] then
+				pcall(function()
+					remote("claim_player_level_rewards", reqStr)
+				end)
 				pcall(function()
 					remote("claim_player_level_rewards", reqLv)
 				end)
 				status(string.format("Claimed level milestone reward for Level %d", reqLv))
+				task.wait(0.3)
+			end
+		end
+	end
+end
+
+local function claimBattlePass()
+	local pd = inv and inv.session and inv.session.profile_data
+	local bpAll = pd and pd.battlepass_data
+	if not bpAll then
+		return
+	end
+	local okM, BP = pcall(require, RS.src.Data.BattlePass)
+	if not okM or type(BP) ~= "table" then
+		return
+	end
+	for bpId, bpData in pairs(bpAll) do
+		local def = BP[bpId]
+		if def and def.tiers and bpData.xp then
+			local curXp = bpData.xp or 0
+			local claimed = (bpData.claimed_tiers and bpData.claimed_tiers.normal) or {}
+			local hasUnclaimed = false
+			for tierKey, tDef in pairs(def.tiers) do
+				local req = tonumber(tDef.xp_required) or 0
+				if curXp >= req and not claimed[tostring(tierKey)] and not claimed[tonumber(tierKey)] then
+					hasUnclaimed = true
+					break
+				end
+			end
+			if hasUnclaimed then
+				status("Unclaimed BattlePass tier ready! Claiming...")
+				pcall(remote, "claim_battlepass_rewards")
 				task.wait(0.5)
+				break
 			end
 		end
 	end
@@ -1122,7 +1266,7 @@ local function plan(done, lv)
 		feedMacroUnits()
 
 		if not hasMacroUnits() then
-			status(string.format("Level %d/%d: Farm Level needs ichigo & naruto; will roll in Lobby", lv, targetLevel))
+			status(string.format("Level %d/%d: Farm Level needs ichigo & naruto; will auto-play Namek 1 Hard normally until win", lv, targetLevel))
 		else
 			status(string.format("Level %d/%d: Farm Level via namek_level_1 Hard (Macro like Infinite, Lose Wave 6)", lv, targetLevel))
 		end
@@ -1139,10 +1283,8 @@ local function plan(done, lv)
 	progress.DailyChallenge = false
 	progress.TargetDifficulty = "Hard"
 
-	feedMacroUnits()
-
 	if not hasMacroUnits() then
-		status(string.format("Level %d >= %d & Namek Cleared: needs ichigo & naruto; will roll in Lobby", lv, targetLevel))
+		status(string.format("Level %d >= %d & Namek Cleared: needs ichigo & naruto; will auto-play Namek 1 Hard normally until win", lv, targetLevel))
 	else
 		status(string.format("Level %d >= %d & Namek Cleared: Farming Gems via namek_infinite!", lv, targetLevel))
 	end
@@ -1151,26 +1293,17 @@ local function plan(done, lv)
 end
 
 local function GetCodes()
-	local CODES = {}
-	local ok, output = pcall(request, {
-		Url = "https://beebom.com/anime-adventures-codes/",
-		Method = "GET",
-	})
-	if ok and type(output) == "table" and output.Body then
-		local p1 = string.find(output.Body, "Working Anime Adventures Codes")
-		if p1 then
-			local endUl = string.find(output.Body, "</ul>", p1)
-			local section = endUl and string.sub(output.Body, p1, endUl) or string.sub(output.Body, p1, p1 + 2000)
-			for code in string.gmatch(section, "<li>%s*<strong>([^<]+)</strong>") do
-				local clean = string.gsub(code, "%s+$", "")
-				clean = string.gsub(clean, "^%s+", "")
-				if clean ~= "" then
-					table.insert(CODES, clean)
-				end
-			end
-		end
-	end
-	return CODES
+	return {
+		"APRILFOOLS",
+		"AACOMEBACK",
+		"2BILLIONAA",
+		"MILLIONFAVES",
+		"DUNGEONS",
+		"UPDATESOON5189",
+		"2MILLIONFAVES",
+		"SUMMERCOMEBACK",
+		"CELESTIALCOMPASSU21",
+	}
 end
 
 local function ensureSocialRequirements(groupId)
@@ -1209,6 +1342,12 @@ local function ensureSocialRequirements(groupId)
 				pcall(function()
 					guiService.SelectedCoreObject = joinBtn
 				end)
+				local absPos = joinBtn.AbsolutePosition + (joinBtn.AbsoluteSize / 2)
+				pcall(function()
+					vim:SendMouseButtonEvent(absPos.X, absPos.Y, 0, true, game, 1)
+					task.wait(0.05)
+					vim:SendMouseButtonEvent(absPos.X, absPos.Y, 0, false, game, 1)
+				end)
 				task.wait(0.05)
 				vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
 				task.wait(0.05)
@@ -1218,64 +1357,124 @@ local function ensureSocialRequirements(groupId)
 				task.wait(0.05)
 				vim:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
 				task.wait(0.5)
+				local joined = false
+				for _ = 1, 10 do
+					local ok, res = pcall(function()
+						return lp:IsInGroupAsync(groupId)
+					end)
+					if ok and res then
+						joined = true
+						break
+					end
+					task.wait(0.3)
+				end
+				if joined then
+					status("Joined group " .. tostring(groupId) .. " successfully!")
+				end
 				break
 			end
 		end
 	end
 end
 
+local sessionCodeAttempts = {}
+local lobbyBusy = false
+
 local function claim()
-	claimLevelMilestones()
-	for _, name in ipairs({ "claim_daily_reward", "claim_battlepass_rewards" }) do
-		pcall(remote, name)
+	if lobbyBusy then
+		return
 	end
-	local handler = inv.session.quest_handler
-	local quests = handler and handler.quest_profile_data and handler.quest_profile_data.quests
-	for id in pairs(quests or {}) do
-		if not alive() then
-			return
-		end
-		pcall(remote, "redeem_quest", tostring(id))
-		task.wait(0.15)
-	end
+	lobbyBusy = true
+	local ok, err = pcall(function()
+		claimLevelMilestones()
+		pcall(remote, "claim_daily_reward")
+		pcall(claimBattlePass)
 
-	if cfg.AutoRedeemCodes then
-		local redeemed = progress.RedeemedCodes
-		if type(redeemed) ~= "table" then
-			redeemed = {}
-			progress.RedeemedCodes = redeemed
-		end
-		local gameRedeemed = inv.session
-			and inv.session.profile_data
-			and inv.session.profile_data.redeemed_codes
-		local codeList = GetCodes()
-		for _, code in ipairs(codeList) do
-			if not alive() then
-				return
-			end
-			local key = tostring(code):upper():gsub("%s+", "")
-			if key ~= "" and not redeemed[key] and not (gameRedeemed and gameRedeemed[key]) then
-				local ok, res, groupId = pcall(remote, "redeem_code", code, true)
-				if ok and res == "needs_social" and groupId then
-					ensureSocialRequirements(groupId)
-					task.wait(1)
-					ok, res = pcall(remote, "redeem_code", code, true)
+		local qui = LP and LP:FindFirstChild("PlayerGui") and LP.PlayerGui:FindFirstChild("QuestsUI")
+		if qui then
+			for _, desc in ipairs(qui:GetDescendants()) do
+				if not alive() or lobby() ~= true then
+					return
 				end
-
-				if ok and res ~= "needs_social" then
-					status("Redeemed code: " .. code)
-					redeemed[key] = true
-					saveSession()
-				else
-					local errStr = tostring(res):lower()
-					if errStr:find("already") or errStr:find("invalid") or errStr:find("expired") then
-						redeemed[key] = true
+				if desc.Name == "ClaimQuest" and desc.Visible and desc.Parent then
+					local qId = desc.Parent.Name
+					if qId and qId:find("^{") then
+						pcall(remote, "redeem_quest", qId)
+						task.wait(0.2)
 					end
 				end
-				task.wait(0.5)
 			end
 		end
+
+		if cfg.AutoRedeemCodes then
+			local redeemed = progress.RedeemedCodes
+			if type(redeemed) ~= "table" then
+				redeemed = {}
+				progress.RedeemedCodes = redeemed
+			end
+			local gameRedeemed = inv and inv.session
+				and inv.session.profile_data
+				and inv.session.profile_data.redeemed_codes
+			if gameRedeemed then
+				for k in pairs(redeemed) do
+					if redeemed[k] == true and not gameRedeemed[k] then
+						redeemed[k] = nil
+					end
+				end
+			end
+			local pLevel = playerLevel() or 0
+			local codeList = GetCodes()
+			for _, code in ipairs(codeList) do
+				if not alive() or lobby() ~= true then
+					return
+				end
+				local key = tostring(code):upper():gsub("%s+", "")
+				local attemptKey = key .. "_" .. tostring(pLevel)
+				if key ~= "" and not (gameRedeemed and gameRedeemed[key]) and not sessionCodeAttempts[attemptKey] then
+					sessionCodeAttempts[attemptKey] = os.clock()
+					status("Trying to redeem code: " .. code)
+					local ok, res, groupId = pcall(remote, "redeem_code", code)
+					if ok and res == "needs_social" and groupId then
+						ensureSocialRequirements(groupId)
+						task.wait(0.5)
+						pcall(remote, "redeem_code", code, true)
+					end
+					task.wait(0.5)
+					local currentRedeemed = inv and inv.session
+						and inv.session.profile_data
+						and inv.session.profile_data.redeemed_codes
+					if currentRedeemed and currentRedeemed[key] then
+						status("Redeemed code: " .. code)
+						redeemed[key] = true
+						saveSession()
+					end
+				end
+			end
+		end
+	end)
+	lobbyBusy = false
+	if not ok then
+		print("[Bocchi Kaitun] claim error: " .. tostring(err))
 	end
+end
+
+local lobbyClaimLoopRunning = false
+local function startLobbyClaimLoop()
+	if lobbyClaimLoopRunning then
+		return
+	end
+	lobbyClaimLoopRunning = true
+	task.spawn(function()
+		while alive() do
+			if lobby() == true and not lobbyBusy and not progress.SummonPending and not room then
+				clearStaleSummonPending()
+				pcall(claimLevelMilestones)
+				pcall(claim)
+			end
+			task.wait(4)
+		end
+		lobbyClaimLoopRunning = false
+	end)
 end
 
 local team
@@ -1291,7 +1490,7 @@ local function isFarmUnit(def, unitId)
 end
 
 local function lockProtectedUnits()
-	local protectedUnits = { ichigo = true, naruto = true, speedwagon = true }
+	local protectedUnits = { ichigo = true, naruto = true, speedwagon = true, elyssia = true, megumi2 = true }
 	local bestCopies = {}
 	for _, unit in pairs(owned()) do
 		local def = units[unit.unit_id]
@@ -1358,7 +1557,7 @@ local function roomFor(count, lv)
 			keep[unit.uuid] = true
 		end
 	end
-	local protectedUnits = { ichigo = true, naruto = true, speedwagon = true }
+	local protectedUnits = { ichigo = true, naruto = true, speedwagon = true, elyssia = true, megumi2 = true }
 	local bestCopies = {}
 	for _, unit in pairs(owned()) do
 		local def = units[unit.unit_id]
@@ -1588,6 +1787,116 @@ local function summon(lv)
 	return ready()
 end
 
+local function getOwnedCelestialCompassId()
+	local Loader = require(game.ReplicatedStorage.src.Loader)
+	local ssc = Loader.load_client_service(script, "SummonServiceClient")
+	if ssc then
+		if ssc.get_default_celestial_compass then
+			local def = ssc.get_default_celestial_compass()
+			if def and (ssc.get_owned_celestial_compasses and ssc.get_owned_celestial_compasses(def) or 0) > 0 then
+				return def
+			end
+		end
+		if ssc.get_celestial_compass_items then
+			for _, id in ipairs(ssc.get_celestial_compass_items()) do
+				if (ssc.get_owned_celestial_compasses and ssc.get_owned_celestial_compasses(id) or 0) > 0 then
+					return id
+				end
+			end
+		end
+	end
+	local normal = inv and inv.session and inv.session.profile_data and inv.session.profile_data.inventory and inv.session.profile_data.inventory.normal_items
+	if normal then
+		for k, v in pairs(normal) do
+			if tostring(k):find("celestial_compass") and (v or 0) > 0 then
+				return tostring(k)
+			end
+		end
+	end
+	return nil
+end
+
+local function getAutoRollTarget()
+	local autoRoll = cfg.AutoRoll
+	if not autoRoll or autoRoll.Enabled ~= true then
+		return nil
+	end
+	if ownsUnit("elyssia") or ownsUnit("megumi2") then
+		return nil
+	end
+	local unitsCfg = autoRoll.Units or {}
+	local wantElyssia = unitsCfg.elyssia == true or unitsCfg.elyssisa == true
+	local wantShadow = unitsCfg.shadow == true or unitsCfg.shadow_incident == true or unitsCfg["shadow (incident)"] == true or unitsCfg.megumi2 == true
+
+	if wantElyssia and wantShadow then
+		local seed = (LP and LP.UserId or 0) % 2
+		return seed == 0 and "elyssia" or "megumi2"
+	elseif wantElyssia then
+		return "elyssia"
+	elseif wantShadow then
+		return "megumi2"
+	end
+	return nil
+end
+
+local function autoRollCelestialCompass(lv)
+	local autoRoll = cfg.AutoRoll
+	if not autoRoll or autoRoll.Enabled ~= true then
+		return
+	end
+	local targetUnit = getAutoRollTarget()
+	if not targetUnit then
+		return
+	end
+	local pd = inv and inv.session and inv.session.profile_data
+	local compassId = getOwnedCelestialCompassId()
+	if compassId and pd then
+		if pd._celestial_compass_pick ~= targetUnit or pd._celestial_compass_item ~= compassId then
+			status("Setting Celestial Compass pity pick to " .. targetUnit)
+			pcall(remote, "set_celestial_compass_pick", compassId, targetUnit)
+			task.wait(0.5)
+		end
+	end
+	local targetGems = tonumber(autoRoll.TargetGems) or 20000
+	local balance = val(LP:FindFirstChild("_stats"), "gem_amount", 0)
+	if type(balance) ~= "number" or balance < targetGems then
+		return
+	end
+	local Loader = require(game.ReplicatedStorage.src.Loader)
+	local ssc = Loader.load_client_service(script, "SummonServiceClient")
+	local bannerId = (ssc and ssc.CELESTIAL_COMPASS_BANNER) or "EventClover"
+	setActivity("Auto Rolling (" .. targetUnit .. ")")
+	while alive() and lobby() and not (ownsUnit("elyssia") or ownsUnit("megumi2")) do
+		balance = val(LP:FindFirstChild("_stats"), "gem_amount", 0)
+		if type(balance) ~= "number" or balance < 500 then
+			break
+		end
+		if not roomFor(10, lv) then
+			if not roomFor(1, lv) then
+				status("Inventory full; pausing auto roll")
+				break
+			end
+		end
+		status("Auto Roll: Summoning 10x for " .. targetUnit .. " (Gems: " .. tostring(balance) .. ")")
+		local ok, err = pcall(remote, "buy_from_banner", bannerId, "gems10")
+		if not ok then
+			break
+		end
+		task.wait(1.2)
+		if ownsUnit("elyssia") or ownsUnit("megumi2") then
+			local gotUnit = ownsUnit("elyssia") and "elyssia" or "megumi2"
+			local def = units and units[gotUnit]
+			local unitName = def and def.name or gotUnit
+			status("Auto Roll: Successfully obtained " .. unitName .. "!")
+			progress.UnitRollPinged = true
+			saveSession()
+			webhook("Obtained target unit: " .. unitName, true, "✨ Target Unit Summoned!")
+			break
+		end
+	end
+	lockProtectedUnits()
+end
+
 local function dps(def, n)
 	local damage, cd = def.damage or 0, def.attack_cooldown or 1
 	for i = 1, n do
@@ -1649,7 +1958,7 @@ function team(lv, plannedStage)
 		end
 	end
 
-	local isMacroMode = progress.FarmInfinite or progress.FarmLevel or plannedStage == "namek_infinite" or (plannedStage == "namek_level_1" and (cfg.FarmLevel == true or cfg["Farm Level"] == true))
+	local isMacroMode = hasMacroUnits() and (progress.FarmInfinite or progress.FarmLevel or plannedStage == "namek_infinite" or (plannedStage == "namek_level_1" and (cfg.FarmLevel == true or cfg["Farm Level"] == true)))
 	if isMacroMode then
 		for _, requiredName in ipairs({ "ichigo", "naruto" }) do
 			for _, unit in ipairs(pool) do
@@ -1765,19 +2074,30 @@ local function equip(wanted)
 end
 
 local function join(id)
+	if lobbyBusy then
+		return
+	end
+	lobbyBusy = true
+	local function exitJoin()
+		lobbyBusy = false
+		room = nil
+	end
+
 	if id == "__DAILY_CHALLENGE" then
 		status("Joining Daily Challenge via Matchmaking...")
 		checkpoint("JoinDailyChallenge", id)
 		local ok, res = getgenv().Matchmaking("__DAILY_CHALLENGE")
 		if not ok then
 			status("Matchmaking failed: " .. tostring(res) .. "; retrying next cycle")
+			exitJoin()
 			return
 		end
 		status("Matchmaking requested for Daily Challenge. Waiting for match teleport...")
 		local started = false
-		local untilAt = os.clock() + 60
+		local untilAt = os.clock() + 30
 		repeat
 			if not alive() then
+				exitJoin()
 				return
 			end
 			if not lobby() then
@@ -1795,8 +2115,8 @@ local function join(id)
 					lm:InvokeServer()
 				end
 			end)
-			return
 		end
+		exitJoin()
 		return
 	end
 
@@ -1812,9 +2132,10 @@ local function join(id)
 	end
 	if not obj then
 		status("Waiting for an empty story lobby")
+		exitJoin()
 		return
 	end
-	status("Story: " .. (levels[id].name or id))
+	status("Story: " .. tostring(levels[id] and levels[id].name or id))
 	checkpoint("Join", id)
 	room = obj.Name
 
@@ -1824,52 +2145,78 @@ local function join(id)
 			or (obj:FindFirstChildWhichIsA("BasePart") and obj:FindFirstChildWhichIsA("BasePart").CFrame)
 		if cf then
 			LP.Character:PivotTo(cf + Vector3.new(0, 3, 0))
-			task.wait(0.5)
+			task.wait(0.3)
 		end
 	end
 
 	local ok, res = pcall(remote, "request_join_lobby", room)
 	if not ok or res == false then
 		status("Could not join lobby pod; retrying next cycle")
-		room = nil
+		exitJoin()
 		return
 	end
 
-	task.wait(1)
+	task.wait(0.4)
 	local matchData = levels[id] and levels[id]._MATCHMAKING
 	local difficulty = progress.TargetDifficulty
 		or (matchData and matchData.difficulty)
 		or (levels[id] and levels[id].difficulty)
 		or "Normal"
-	pcall(remote, "request_lock_level", room, id, true, difficulty)
-	task.wait(1)
-	pcall(remote, "request_start_game", room)
 
-	local started = false
-	local untilAt = os.clock() + 60
-	repeat
-		if not alive() then
-			return
-		end
-		if not lobby() then
-			started = true
+	local locked = false
+	for attempt = 1, 3 do
+		local okLock, resLock = pcall(remote, "request_lock_level", room, id, true, difficulty)
+		if okLock and resLock == true then
+			locked = true
 			break
 		end
-		task.wait(0.5)
-	until os.clock() >= untilAt
+		task.wait(0.4)
+	end
 
-	if not started then
-		status("Story start timed out; leaving pod")
+	if not locked then
+		status("Failed to lock level " .. tostring(id) .. "; leaving pod to retry")
 		if rem and rem:FindFirstChild("request_leave_lobby") then
 			pcall(function()
 				rem.request_leave_lobby:InvokeServer(room)
 			end)
 		end
-		room = nil
+		exitJoin()
 		return
 	end
 
-	room = nil
+	task.wait(0.3)
+	local started = false
+	for attempt = 1, 2 do
+		pcall(remote, "request_start_game", room)
+		local waitLimit = os.clock() + 8
+		repeat
+			if not alive() then
+				exitJoin()
+				return
+			end
+			if not lobby() then
+				started = true
+				break
+			end
+			task.wait(0.5)
+		until os.clock() >= waitLimit
+		if started then
+			break
+		end
+	end
+
+	if not started then
+		status("Story start timed out; leaving pod to re-enter")
+		if rem and rem:FindFirstChild("request_leave_lobby") then
+			pcall(function()
+				rem.request_leave_lobby:InvokeServer(room)
+			end)
+		end
+		exitJoin()
+		return
+	end
+
+	exitJoin()
 end
 
 local function placement(info, key)
@@ -2096,10 +2443,14 @@ local function circlePlace(index, n, info)
 	local count = 0
 	while #candidates > 0 and count < maxIterations do
 		count += 1
-		table.sort(candidates, function(a, b)
-			return a.dist > b.dist
-		end)
-		local row = table.remove(candidates)
+		local bestIdx, bestDist = 1, candidates[1].dist
+		for i = 2, #candidates do
+			if candidates[i].dist < bestDist then
+				bestDist = candidates[i].dist
+				bestIdx = i
+			end
+		end
+		local row = table.remove(candidates, bestIdx)
 		hit = ray(row.pos + Vector3.new(0, 4, 0), surface, 8)
 		if hit and clear(hit.Position) then
 			return CFrame.new(hit.Position)
@@ -2508,8 +2859,9 @@ local function play()
 	local sessionData = inv and inv.session and inv.session.profile_data and inv.session.profile_data.level_data
 	local doneTable = (sessionData and sessionData.completed_story_levels) or {}
 	local uncompletedAct = nextNamekAct(doneTable)
+	local hasMacro = hasMacroUnits()
 	local isStoryLevelFarm = (not isInfinite) and (not isDailyChallenge) and (not uncompletedAct) and (curLv < targetLevel)
-	local isMacroMode = not isDailyChallenge and (isInfinite or isStoryLevelFarm or progress.FarmInfinite or progress.FarmLevel)
+	local isMacroMode = hasMacro and not isDailyChallenge and (isInfinite or isStoryLevelFarm or progress.FarmInfinite or progress.FarmLevel)
 
 	if isDailyChallenge then
 		setActivity("Daily Challenge")
@@ -2545,9 +2897,13 @@ local function play()
 	local macroStep = 1
 	local macroRetries = 0
 	local wave6Surrendered = false
+	local lastLootSample = 0
 
 	while alive() and lobby() == false do
-		loot.sample()
+		if os.clock() - lastLootSample >= 5 then
+			loot.sample()
+			lastLootSample = os.clock()
+		end
 		local waveNum = val(workspace, "_wave_num", 0)
 
 		curLv = playerLevel() or progress.Level or 1
@@ -2555,8 +2911,9 @@ local function play()
 		sessionData = inv and inv.session and inv.session.profile_data and inv.session.profile_data.level_data
 		doneTable = (sessionData and sessionData.completed_story_levels) or {}
 		uncompletedAct = nextNamekAct(doneTable)
+		local hasMacro = hasMacroUnits()
 		isStoryLevelFarm = (not isInfinite) and (not isDailyChallenge) and (not uncompletedAct) and (curLv < targetLevel)
-		isMacroMode = not isDailyChallenge and (isInfinite or isStoryLevelFarm or progress.FarmInfinite or progress.FarmLevel)
+		isMacroMode = hasMacro and not isDailyChallenge and (isInfinite or isStoryLevelFarm or progress.FarmInfinite or progress.FarmLevel)
 
 		if isMacroMode and waveNum >= 6 and not wave6Surrendered then
 			wave6Surrendered = true
@@ -2610,7 +2967,7 @@ local function play()
 			local outcome
 			if isInfinite then
 				outcome = "INFINITE"
-			elseif isStoryLevelFarm or isMacroMode or wave6Surrendered then
+			elseif isMacroMode or wave6Surrendered then
 				outcome = "LEVEL_FARM"
 			elseif curHp <= 0 then
 				outcome = "DEFEAT"
@@ -2802,34 +3159,71 @@ local function play()
 				local uncompletedAct = nextNamekAct(doneTable)
 
 				if not uncompletedAct then
-					status(string.format("Namek Cleared! Level %d/%d. Returning to lobby...", curLv, targetLevel))
-					checkpoint("NamekClearedReturnLobby", data.id)
-					pcall(remote, "set_game_finished_vote", "lobby")
-					pcall(remote, "teleport_back_to_lobby")
-					local resUI = LP:FindFirstChild("PlayerGui") and LP.PlayerGui:FindFirstChild("ResultsUI")
-					local retBtn = resUI and resUI:FindFirstChild("Finished") and resUI.Finished:FindFirstChild("Next")
-					if retBtn and firesignal then
-						pcall(firesignal, retBtn.MouseButton1Click)
+					local currentGems = val(LP:FindFirstChild("_stats"), "gem_amount", 0)
+					if type(currentGems) ~= "number" then
+						currentGems = 0
 					end
-					task.wait(2)
-					if alive() and not lobby() then
-						pcall(function()
-							TP:Teleport(settings.LOBBY_PLACE_ID, LP)
-						end)
-					end
-					local waitEnd = os.clock() + 30
-					repeat
-						task.wait(0.5)
-						if not alive() or lobby() == true then
-							break
+					if curLv >= targetLevel or currentGems >= 500 then
+						if currentGems >= 500 and curLv < targetLevel then
+							status(string.format("Farm Level Fallback: %d gems reached (>= 500)! Returning to lobby to roll ichigo & naruto...", currentGems))
+						else
+							status(string.format("Namek Cleared! Level %d/%d. Returning to lobby...", curLv, targetLevel))
 						end
+						checkpoint("NamekClearedReturnLobby", data.id)
 						pcall(remote, "set_game_finished_vote", "lobby")
 						pcall(remote, "teleport_back_to_lobby")
+						local resUI = LP:FindFirstChild("PlayerGui") and LP.PlayerGui:FindFirstChild("ResultsUI")
+						local retBtn = resUI and resUI:FindFirstChild("Finished") and resUI.Finished:FindFirstChild("Next")
 						if retBtn and firesignal then
 							pcall(firesignal, retBtn.MouseButton1Click)
 						end
-					until os.clock() >= waitEnd
-					return
+						task.wait(2)
+						if alive() and not lobby() then
+							pcall(function()
+								TP:Teleport(settings.LOBBY_PLACE_ID, LP)
+							end)
+						end
+						local waitEnd = os.clock() + 30
+						repeat
+							task.wait(0.5)
+							if not alive() or lobby() == true then
+								break
+							end
+							pcall(remote, "set_game_finished_vote", "lobby")
+							pcall(remote, "teleport_back_to_lobby")
+							if retBtn and firesignal then
+								pcall(firesignal, retBtn.MouseButton1Click)
+							end
+						until os.clock() >= waitEnd
+						return
+					else
+						status(string.format("Level %d/%d (Fallback %d/500 gems): Won namek_level_1 (Hard)! Replaying in room to farm level & gems...", curLv, targetLevel, currentGems))
+						progress.ResultJob = nil
+						pcall(remote, "set_game_finished_vote", "replay")
+						local gui = LP:FindFirstChild("PlayerGui") and LP.PlayerGui:FindFirstChild("ResultsUI")
+						local retryBtn = gui and gui:FindFirstChild("Finished") and gui.Finished:FindFirstChild("NextRetry")
+						if retryBtn and firesignal then
+							pcall(firesignal, retryBtn.MouseButton1Click)
+						end
+						local reset = false
+						local waitEnd = os.clock() + 30
+						repeat
+							task.wait(0.5)
+							if not alive() or lobby() == true or not val(workspace:FindFirstChild("_DATA"), "GameFinished", false) then
+								reset = true
+								break
+							end
+						until os.clock() >= waitEnd
+						if not reset and alive() and not lobby() then
+							status("Replay vote timed out; returning to lobby as fallback")
+							pcall(remote, "set_game_finished_vote", "lobby")
+							pcall(remote, "teleport_back_to_lobby")
+							pcall(function()
+								TP:Teleport(settings.LOBBY_PLACE_ID, LP)
+							end)
+						end
+						return
+					end
 				end
 
 				roomFor(1, curLv)
@@ -2987,7 +3381,7 @@ local function play()
 				local money = val(LP:FindFirstChild("_stats"), "resource", 0)
 				local dataObj = workspace:FindFirstChild("_DATA")
 				local scale = val(dataObj and dataObj:FindFirstChild("LevelModifiers"), "player_cost_scale", 1)
-				if folder then
+				if folder and money >= 100 then
 					local hasUnmaxedHigherTier = false
 					for _, unit in ipairs(folder:GetChildren()) do
 						local stats = unit:FindFirstChild("_stats")
@@ -3108,7 +3502,12 @@ local function setupBlackScreen()
 		return
 	end
 	pcall(function()
-		game:GetService("RunService"):Set3dRenderingEnabled(false)
+		local isDelta = type(identifyexecutor) == "function" and tostring(identifyexecutor()):lower():find("delta") ~= nil
+		local uis = game:GetService("UserInputService")
+		local isMobile = uis.TouchEnabled and not uis.KeyboardEnabled
+		if not isDelta and not isMobile then
+			game:GetService("RunService"):Set3dRenderingEnabled(false)
+		end
 	end)
 	pcall(function()
 		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
@@ -3319,15 +3718,23 @@ local function run()
 	known["__DAILY_CHALLENGE"] = true
 	assert(#story > 0, "Story order unavailable.")
 	loadSession()
+	startLobbyClaimLoop()
 	local notified = false
 	while alive() do
 		local isLobby = lobby()
 		assert(isLobby ~= nil, "IsLobby missing")
 		if isLobby then
+			clearStaleSummonPending()
 			setActivity("Lobby")
 			local lv = assert(playerLevel(), "Player level unavailable")
 			progress.Level = lv
 			claimLevelMilestones()
+			local targetLevel = tonumber(cfg["Target Level"] or cfg.TargetLevel) or 40
+			if lv >= targetLevel and not progress.TargetLevelPinged then
+				progress.TargetLevelPinged = true
+				saveSession()
+				webhook("Reached Target Level " .. tostring(targetLevel), true, "🎯 Target Level Reached!")
+			end
 			if progress.LastStage == "__DAILY_CHALLENGE" then
 				if isDailyChallengeCleared() then
 					progress.DailyChallengeCleared = true
@@ -3339,6 +3746,11 @@ local function run()
 					status("Daily Challenge verified: NOT CLEARED (will retry)")
 				end
 			end
+			checkpoint("Lobby")
+			status("Performing lobby checks: claiming rewards and redeeming codes...")
+			claim()
+			feedMacroUnits()
+			autoRollCelestialCompass(lv)
 			local done = inv.session.profile_data.level_data.completed_story_levels
 			assert(type(done) == "table", "completed_story_levels missing")
 			local plannedStage = plan(done, lv)
@@ -3351,7 +3763,7 @@ local function run()
 				setActivity("Daily Challenge")
 			elseif plannedStage == "namek_infinite" then
 				setActivity("Farm Gems")
-			elseif plannedStage == "namek_level_1" and (cfg.FarmLevel == true or cfg["Farm Level"] == true) then
+			elseif plannedStage == "namek_level_1" and (progress.FarmLevel or cfg.FarmLevel == true or cfg["Farm Level"] == true) then
 				setActivity("Farm Level")
 			else
 				setActivity("Story Mode")
@@ -3361,26 +3773,23 @@ local function run()
 				webhook("Lobby overview")
 				notified = true
 			end
-			if not progress.SummonPending then
-				checkpoint("Lobby")
-				claim()
-				feedMacroUnits()
-			end
 			roomFor(1, lv)
 			local isMacroStage = plannedStage == "namek_infinite" or (plannedStage == "namek_level_1" and (progress.FarmLevel or cfg.FarmLevel == true or cfg["Farm Level"] == true))
 			local canJoin = true
 			if isMacroStage and not hasMacroUnits() then
-				canJoin = false
-				local bCost = 50
 				local balance = val(LP:FindFirstChild("_stats"), "gem_amount", 0)
-				if type(balance) == "number" and balance >= bCost then
+				if type(balance) == "number" and balance >= 500 then
 					setActivity("Summoning")
-					status("Macro stage requires ichigo & naruto; summoning...")
+					status(string.format("Farm Level: %d gems reached (>= 500); rolling for ichigo & naruto...", balance))
 					summon(lv)
 					feedMacroUnits()
-				else
-					setActivity("Lobby")
-					status("Macro stage requires ichigo & naruto; waiting for gems...")
+				end
+				if not hasMacroUnits() then
+					canJoin = true
+					if plannedStage == "namek_infinite" then
+						plannedStage = "namek_level_1"
+					end
+					status(string.format("Farm Level (Fallback): Missing ichigo/naruto (%d/500 gems); auto-playing Namek 1 Hard normally until win...", type(balance) == "number" and balance or 0))
 				end
 			elseif plannedStage ~= "__DAILY_CHALLENGE" and not progress.DailyChallenge and not isMacroStage then
 				canJoin = summon(lv)
